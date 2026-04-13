@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キャリアアップ助成金（正社員化コース）申請支援AI</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --line: #d9e2ec;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-soft: #e6fffb;
+      --warn: #92400e;
+      --warn-soft: #fff7ed;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+    .header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+    }
+    .header-top { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+    .brand { display:flex; flex-direction:column; gap:4px; }
+    .brand-badge {
+      display:inline-block; width:fit-content;
+      font-size:12px; font-weight:700; letter-spacing:.08em;
+      color:var(--accent); background:var(--accent-soft);
+      padding:5px 10px; border-radius:999px;
+    }
+    .brand h1 { margin:0; font-size:22px; line-height:1.4; }
+    .brand p { margin:0; color:var(--muted); font-size:13px; line-height:1.6; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn, .btn-sub {
+      border:none; border-radius:12px; padding:11px 16px;
+      font-weight:700; cursor:pointer; font-size:14px;
+    }
+    .btn { background:var(--accent); color:#fff; }
+    .btn-sub { background:#eef2f7; color:var(--text); border:1px solid var(--line); }
+    .main { display:grid; grid-template-columns: 360px 1fr 520px; gap:16px; padding:16px; align-items:start; }
+    .panel {
+      background:var(--panel); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .panel-head { padding:16px 18px; border-bottom:1px solid var(--line); background:#fbfdff; }
+    .panel-head h2 { margin:0 0 6px; font-size:18px; }
+    .panel-head p { margin:0; color:var(--muted); font-size:13px; line-height:1.6; }
+    .panel-body { padding:16px 18px 18px; }
+    .upload-box { border:1px dashed #9db2c8; border-radius:14px; padding:16px; background:#fcfeff; margin-bottom:14px; }
+    .upload-box strong { display:block; margin-bottom:6px; }
+    .mini-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px;
+      border:1px solid var(--line); border-radius:999px;
+      padding:8px 12px; font-size:13px;
+      background:#fff; color:var(--text); cursor:pointer;
+    }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { font-size:12px; color:var(--muted); font-weight:700; }
+    .field select, .field input, .field textarea {
+      width:100%; border:1px solid var(--line); border-radius:12px;
+      padding:11px 12px; font-size:14px; font-family:inherit;
+      background:#fff; color:var(--text);
+    }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .grid4 { display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:12px; }
+    .summary-box {
+      border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; margin-bottom:12px;
+    }
+    .summary-box h3 { margin:0 0 8px; font-size:15px; }
+    .summary-box p { margin:0; color:#374151; font-size:14px; line-height:1.8; }
+    .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+    .tab { border:1px solid var(--line); background:#fff; border-radius:999px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer; }
+    .tab.active { background:var(--accent-soft); color:var(--accent); border-color:#9adbd4; }
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; }
+    .warn-box {
+      background:var(--warn-soft); border:1px solid #fed7aa; color:var(--warn);
+      border-radius:14px; padding:14px; line-height:1.8; font-size:14px; white-space:pre-wrap;
+    }
+    .kpi { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .pill {
+      padding:7px 10px; border-radius:999px; border:1px solid var(--line);
+      background:#fff; font-size:12px; font-weight:700;
+    }
+    @media (max-width: 1300px) { .main { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <div class="brand">
+          <span class="brand-badge">キャリアアップ助成金（正社員化コース）専用</span>
+          <h1>申請支援AI（ローカル・単体HTML）</h1>
+          <p>`rules.md` を判定フローの骨格に、`templates/` から不足資料・理由文・チェックリストを生成します。</p>
+        </div>
+        <div class="actions">
+          <button class="btn-sub" onclick="window.print()">印刷 / PDF保存</button>
+          <button class="btn-sub" onclick="saveDraft()">入力を保存</button>
+          <button class="btn" onclick="loadDemo()">デモ入力</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>読込（推奨）</h2>
+          <p>ブラウザの制約でファイルを自動参照できないため、初回のみ選択してください。</p>
+        </div>
+        <div class="panel-body">
+          <div class="upload-box">
+            <strong>templates / rules</strong>
+            <div class="mini-actions">
+              <button class="chip" type="button" onclick="pickTemplatesDir()">templatesフォルダを選択</button>
+              <button class="chip" type="button" onclick="pickRulesFile()">rules.mdを選択</button>
+              <button class="chip" type="button" onclick="showStatus()">読込状況</button>
+            </div>
+            <div class="kpi">
+              <span class="pill" id="tplPill">テンプレ：未読込</span>
+              <span class="pill" id="rulesPill">rules.md：未読込</span>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h3>rules.md（プレビュー）</h3>
+            <p id="rulesPreview" style="white-space:pre-wrap; font-size:13px; color:#374151;">未読込（任意）</p>
+          </div>
+          <div class="summary-box">
+            <h3>補足</h3>
+            <p>制度理解は `laws/career-up-guideline.pdf`（Q&A）に基づき、NGになりやすい点（計画期間外、客観性不足、試用期間、3%未達、期限徒過、添付加工 等）を警告に反映しています。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>入力</h2>
+          <p>会社・対象者・賃金・期限を入力して「判定 / 生成」を押してください。</p>
+        </div>
+        <div class="panel-body">
+          <div class="summary-box">
+            <h3>会社 / 計画</h3>
+            <div class="grid4">
+              <div class="field">
+                <label>顧客名（会社名）</label>
+                <input id="companyName" type="text" placeholder="例：株式会社A商事" />
+              </div>
+              <div class="field">
+                <label>従業員数（常時雇用）</label>
+                <input id="employeeCount" type="number" min="1" value="20" />
+              </div>
+              <div class="field">
+                <label>計画開始日</label>
+                <input id="planStart" type="date" />
+              </div>
+              <div class="field">
+                <label>計画終了日</label>
+                <input id="planEnd" type="date" />
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h3>就業規則等（チェック）</h3>
+            <div class="grid4">
+              <div class="field">
+                <label>転換制度の規定あり</label>
+                <select id="conversionRuleExists"><option value="true">はい</option><option value="false">いいえ</option></select>
+              </div>
+              <div class="field">
+                <label>手続き・要件・実施時期が客観的</label>
+                <select id="conversionRuleObjective"><option value="true">はい</option><option value="false">いいえ</option></select>
+              </div>
+              <div class="field">
+                <label>正社員に賞与/退職金が適用</label>
+                <select id="regularHasBonusOrRetirement"><option value="true">はい</option><option value="false">いいえ</option></select>
+              </div>
+              <div class="field">
+                <label>正社員に昇給が適用</label>
+                <select id="regularHasRaise"><option value="true">はい</option><option value="false">いいえ</option></select>
+              </div>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label>非正規は賃金差（額/計算方法差）の規定あり</label>
+                <select id="nonregularWageDiff"><option value="true">はい</option><option value="false">いいえ</option></select>
+              </div>
+              <div class="field">
+                <label>添付は原本/複写（加工・転記なし）</label>
+                <select id="workRulesNotEdited"><option value="true">はい</option><option value="false">不安/一部加工予定</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h3>対象労働者</h3>
+            <div class="grid4">
+              <div class="field">
+                <label>氏名（表示用）</label>
+                <input id="workerName" type="text" value="山田 太郎" />
+              </div>
+              <div class="field">
+                <label>雇入日</label>
+                <input id="hireDate" type="date" />
+              </div>
+              <div class="field">
+                <label>転換日</label>
+                <input id="conversionDate" type="date" />
+              </div>
+              <div class="field">
+                <label>転換前の雇用区分</label>
+                <select id="employmentBefore"><option>有期</option><option>無期</option><option>派遣</option></select>
+              </div>
+            </div>
+            <div class="grid4">
+              <div class="field">
+                <label>転換後の雇用区分</label>
+                <select id="employmentAfter"><option>正社員</option><option>多様な正社員</option></select>
+              </div>
+              <div class="field">
+                <label>転換前の雇用期間（月）</label>
+                <input id="tenureMonths" type="number" min="0" value="9" />
+              </div>
+              <div class="field">
+                <label>転換後に試用期間あり</label>
+                <select id="hasProbation"><option value="false">いいえ</option><option value="true">はい</option></select>
+              </div>
+              <div class="field">
+                <label>転換日に定年年齢超</label>
+                <select id="overRetire"><option value="false">いいえ</option><option value="true">はい</option></select>
+              </div>
+            </div>
+            <div class="grid4">
+              <div class="field">
+                <label>新規学卒者</label>
+                <select id="isNewGraduate"><option value="false">いいえ</option><option value="true">はい</option></select>
+              </div>
+              <div class="field">
+                <label>（新規学卒者のみ）卒業後〜雇入（月）</label>
+                <input id="monthsSinceGrad" type="number" min="0" value="13" />
+              </div>
+              <div class="field">
+                <label>外国人の除外類型（技能実習/特定技能1号等）</label>
+                <select id="foreignExcluded"><option value="false">いいえ</option><option value="true">はい</option></select>
+              </div>
+              <div class="field">
+                <label>転換後 社会保険加入（適用事業所等）</label>
+                <select id="socialInsurance"><option value="true">はい</option><option value="false">未/不明</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-box">
+            <h3>賃金（3%増額）・期限</h3>
+            <div class="grid4">
+              <div class="field">
+                <label>転換前6か月 賃金総額（円）</label>
+                <input id="wageBefore" type="number" min="0" value="1200000" />
+              </div>
+              <div class="field">
+                <label>転換後6か月 賃金総額（円）</label>
+                <input id="wageAfter" type="number" min="0" value="1250000" />
+              </div>
+              <div class="field">
+                <label>6か月分の賃金を支給した日（実際）</label>
+                <input id="sixMonthPayDate" type="date" />
+              </div>
+              <div class="field">
+                <label>提出予定日</label>
+                <input id="submitDate" type="date" />
+              </div>
+            </div>
+            <p style="margin:10px 0 0; color:var(--muted); font-size:12px; line-height:1.7;">
+              増額率は自動計算（四捨五入不可。3.00%以上が必要）。申請期間は「賃金支払日の翌日から2か月以内」。
+            </p>
+            <div class="mini-actions">
+              <button class="btn" type="button" onclick="runAll()">判定 / 生成</button>
+              <button class="btn-sub" type="button" onclick="copyAll()">出力をまとめてコピー</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>出力</h2>
+          <p>①対象判定 ②不足資料 ③理由文 ④チェックリスト ⑤NG警告</p>
+        </div>
+        <div class="panel-body">
+          <div class="tabs">
+            <button class="tab active" data-tab="tabJudge">①対象判定</button>
+            <button class="tab" data-tab="tabDocs">②不足資料</button>
+            <button class="tab" data-tab="tabReason">③理由文</button>
+            <button class="tab" data-tab="tabCheck">④/⑤チェック</button>
+            <button class="tab" data-tab="tabTpl">テンプレ</button>
+          </div>
+
+          <div id="tabJudge" class="tab-pane active">
+            <div class="summary-box">
+              <h3>総合判定</h3>
+              <p id="judgeSummary">未実行です。「判定 / 生成」を押してください。</p>
+            </div>
+            <div class="summary-box">
+              <h3>判定詳細（rules.mdの順序）</h3>
+              <div id="judgeDetails"></div>
+            </div>
+          </div>
+
+          <div id="tabDocs" class="tab-pane">
+            <div class="summary-box">
+              <h3>不足資料一覧（コピー用）</h3>
+              <textarea id="missingDocsOut" style="width:100%; min-height:360px;"></textarea>
+            </div>
+          </div>
+
+          <div id="tabReason" class="tab-pane">
+            <div class="summary-box">
+              <h3>申請理由文ドラフト（コピー用）</h3>
+              <textarea id="reasonOut" style="width:100%; min-height:420px;"></textarea>
+            </div>
+          </div>
+
+          <div id="tabCheck" class="tab-pane">
+            <div class="summary-box">
+              <h3>提出前チェックリスト（コピー用）</h3>
+              <textarea id="checklistOut" style="width:100%; min-height:280px;"></textarea>
+            </div>
+            <div class="warn-box" id="warningsOut">未実行です。</div>
+          </div>
+
+          <div id="tabTpl" class="tab-pane">
+            <div class="summary-box">
+              <h3>テンプレ（手動貼り付け）</h3>
+              <p>フォルダ選択ができない場合、`templates/` の中身を貼り付けてください。</p>
+            </div>
+            <div class="summary-box">
+              <h3>`templates/reason.txt.txt`</h3>
+              <textarea id="tplReason" style="width:100%; min-height:220px;"></textarea>
+            </div>
+            <div class="summary-box">
+              <h3>`templates/documents.txt.txt`</h3>
+              <textarea id="tplDocs" style="width:100%; min-height:220px;"></textarea>
+            </div>
+            <div class="summary-box">
+              <h3>`templates/flow.txt.txt`</h3>
+              <textarea id="tplFlow" style="width:100%; min-height:220px;"></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panes = document.querySelectorAll('.tab-pane');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    const state = {
+      templates: { reason: '', documents: '', flow: '' },
+      rulesMd: ''
+    };
+
+    function fmtDate(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    function safeNum(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+    function dedupe(list) { const s = new Set(); const out = []; for (const x of list) { if (s.has(x)) continue; s.add(x); out.push(x); } return out; }
+    function renderBracedTemplate(tpl, ctx) { return tpl.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k) => (ctx[k] ?? '')); }
+
+    function twoMonthsWindow(paymentDateStr) {
+      const p = new Date(paymentDateStr);
+      const start = new Date(p.getFullYear(), p.getMonth(), p.getDate() + 1);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 2);
+      end.setDate(end.getDate() - 1);
+      return { start, end };
+    }
+
+    function ensureTemplatesLoaded() {
+      const tReason = document.getElementById('tplReason').value.trim();
+      const tDocs = document.getElementById('tplDocs').value.trim();
+      const tFlow = document.getElementById('tplFlow').value.trim();
+      if (tReason) state.templates.reason = tReason;
+      if (tDocs) state.templates.documents = tDocs;
+      if (tFlow) state.templates.flow = tFlow;
+      const ok = !!(state.templates.reason && state.templates.documents && state.templates.flow);
+      document.getElementById('tplPill').textContent = ok ? 'テンプレ：読込済' : 'テンプレ：未読込';
+      return ok;
+    }
+
+    function getInput() {
+      return {
+        companyName: document.getElementById('companyName').value || '',
+        employeeCount: safeNum(document.getElementById('employeeCount').value),
+        planStartStr: document.getElementById('planStart').value,
+        planEndStr: document.getElementById('planEnd').value,
+        planStart: new Date(document.getElementById('planStart').value),
+        planEnd: new Date(document.getElementById('planEnd').value),
+        conversionRuleExists: document.getElementById('conversionRuleExists').value === 'true',
+        conversionRuleObjective: document.getElementById('conversionRuleObjective').value === 'true',
+        regularHasBonusOrRetirement: document.getElementById('regularHasBonusOrRetirement').value === 'true',
+        regularHasRaise: document.getElementById('regularHasRaise').value === 'true',
+        nonregularWageDiff: document.getElementById('nonregularWageDiff').value === 'true',
+        workRulesNotEdited: document.getElementById('workRulesNotEdited').value === 'true',
+        workerName: document.getElementById('workerName').value || '',
+        hireDateStr: document.getElementById('hireDate').value,
+        conversionDateStr: document.getElementById('conversionDate').value,
+        hireDate: new Date(document.getElementById('hireDate').value),
+        conversionDate: new Date(document.getElementById('conversionDate').value),
+        employmentBefore: document.getElementById('employmentBefore').value,
+        employmentAfter: document.getElementById('employmentAfter').value,
+        tenureMonths: safeNum(document.getElementById('tenureMonths').value),
+        hasProbation: document.getElementById('hasProbation').value === 'true',
+        overRetire: document.getElementById('overRetire').value === 'true',
+        isNewGraduate: document.getElementById('isNewGraduate').value === 'true',
+        monthsSinceGrad: safeNum(document.getElementById('monthsSinceGrad').value),
+        foreignExcluded: document.getElementById('foreignExcluded').value === 'true',
+        socialInsurance: document.getElementById('socialInsurance').value === 'true',
+        wageBefore: safeNum(document.getElementById('wageBefore').value),
+        wageAfter: safeNum(document.getElementById('wageAfter').value),
+        sixMonthPayDateStr: document.getElementById('sixMonthPayDate').value,
+        submitDateStr: document.getElementById('submitDate').value
+      };
+    }
+
+    function evaluate(input) {
+      const checks = [];
+      const missing = [];
+      const warnings = [];
+
+      // rules.mdの骨格（①企業→②労働者→③賃金→④期限）
+      const inPlan = input.conversionDate >= input.planStart && input.conversionDate <= input.planEnd;
+      checks.push({ level: inPlan ? 'OK' : 'NG', title: '①対象企業か：計画期間内の転換', detail: `転換日=${input.conversionDateStr} / 計画期間=${input.planStartStr}〜${input.planEndStr}` });
+      if (!inPlan) {
+        warnings.push('転換日がキャリアアップ計画期間外だと原則対象外（Q&Aの趣旨）。');
+        missing.push('キャリアアップ計画（計画期間・受理控え等）');
+      }
+
+      if (!input.conversionRuleExists) {
+        checks.push({ level: 'NG', title: '①対象企業か：転換制度の規定', detail: '就業規則等に転換制度の規定が確認できない。' });
+        warnings.push('転換制度の規定がないと支給対象外になりやすい。');
+        missing.push('就業規則等（転換制度の規定が確認できるもの）');
+      } else {
+        checks.push({ level: 'OK', title: '①対象企業か：転換制度の規定', detail: '規定あり（入力）。' });
+        checks.push({ level: input.conversionRuleObjective ? 'OK' : 'NG', title: '①対象企業か：手続き・要件・実施時期の客観性', detail: input.conversionRuleObjective ? '客観性あり（入力）。' : '客観的に確認可能な形で明記されていない可能性。' });
+        if (!input.conversionRuleObjective) warnings.push('転換要件の例外運用や曖昧規定はNGになりやすい（客観性）。');
+      }
+
+      const regularOk = input.regularHasBonusOrRetirement && input.regularHasRaise;
+      checks.push({ level: regularOk ? 'OK' : 'NG', title: '①対象企業か：正社員定義（賞与/退職金 + 昇給）', detail: regularOk ? '要件を満たす前提（入力）。' : '賞与/退職金または昇給が不足。' });
+      if (!regularOk) warnings.push('正社員の定義要件（賞与/退職金 + 昇給）が不十分だと不支給リスク。');
+
+      checks.push({ level: input.nonregularWageDiff ? 'OK' : 'NG', title: '①対象企業か：非正規の賃金差（額/計算方法差）', detail: input.nonregularWageDiff ? '差が確認できる前提（入力）。' : '就業規則等で確認できない前提。' });
+      if (!input.nonregularWageDiff) warnings.push('正規・非正規の区分と賃金差が就業規則等で確認できないと対象外になりやすい。');
+
+      if (!input.workRulesNotEdited) {
+        checks.push({ level: 'WARN', title: '①対象企業か：添付書類の加工リスク', detail: '加工・転記物は不正受給リスクになり得るため要注意。' });
+        warnings.push('添付書類の加工・転記は不正受給認定リスク（原本/複写が原則）。');
+      }
+
+      // ②対象労働者か
+      checks.push({ level: input.foreignExcluded ? 'NG' : 'OK', title: '②対象労働者か：外国人の除外類型', detail: input.foreignExcluded ? '技能実習/特定技能1号等は対象外になり得る。' : '除外類型に該当しない前提（入力）。' });
+      if (input.foreignExcluded) warnings.push('外国人技能実習生・特定技能1号などは対象外になり得る。');
+
+      checks.push({ level: (input.isNewGraduate && input.monthsSinceGrad < 12) ? 'NG' : 'OK', title: '②対象労働者か：新規学卒者（1年要件）', detail: input.isNewGraduate ? `卒業後〜雇入（月）=${input.monthsSinceGrad}` : '該当なし（入力）。' });
+      if (input.isNewGraduate && input.monthsSinceGrad < 12) warnings.push('新規学卒者で雇入れから1年未満は対象外になり得る（Q&A）。');
+
+      checks.push({ level: input.overRetire ? 'NG' : 'OK', title: '②対象労働者か：定年要件', detail: input.overRetire ? '定年年齢超の正社員転換は対象外になり得る。' : 'クリア前提（入力）。' });
+      if (input.overRetire) warnings.push('定年年齢超の正社員転換は対象外になり得る。');
+
+      checks.push({ level: input.hasProbation ? 'WARN' : 'OK', title: '②対象労働者か：転換後の試用期間', detail: input.hasProbation ? '試用期間があると取扱い・申請計算が変わり得る。' : 'なし前提（入力）。' });
+      if (input.hasProbation) warnings.push('転換後に試用期間を設けると正社員とみなされない期間が生じ、申請計算もズレる。');
+
+      const needsTenure = input.employmentBefore !== '派遣';
+      checks.push({ level: (needsTenure && input.tenureMonths < 6) ? 'NG' : 'OK', title: '②対象労働者か：転換前6か月要件', detail: needsTenure ? `転換前の雇用期間（月）=${input.tenureMonths}` : '派遣は別扱い（入力）。' });
+      if (needsTenure && input.tenureMonths < 6) warnings.push('有期雇用等の適用を6か月以上受けていないと対象外になり得る。');
+
+      checks.push({ level: input.socialInsurance ? 'OK' : 'WARN', title: '②対象労働者か：転換後の社会保険', detail: input.socialInsurance ? '加入あり前提（入力）。' : '適用事業所では原則加入が必要。' });
+      if (!input.socialInsurance) {
+        warnings.push('適用事業所の場合、転換後に社会保険加入がないと対象外リスク。');
+        missing.push('社会保険の加入が分かる資料（適用事業所の場合）');
+      }
+
+      // ③賃金3%
+      const inc = input.wageBefore > 0 ? ((input.wageAfter - input.wageBefore) / input.wageBefore) * 100 : 0;
+      checks.push({ level: inc >= 3.0 ? 'OK' : 'NG', title: '③対象経費か：賃金3%以上の増額', detail: `増額率=${inc.toFixed(2)}%（3.00%以上。四捨五入不可）` });
+      if (inc < 3.0) {
+        warnings.push('賃金増額が2.99%などの場合は要件未達（四捨五入不可）。');
+        missing.push('転換前後6か月の賃金台帳・給与明細（算定根拠）');
+      }
+
+      // ④期限（2か月）
+      const { start, end } = twoMonthsWindow(input.sixMonthPayDateStr);
+      const submit = new Date(input.submitDateStr);
+      const within = submit >= start && submit <= end;
+      checks.push({ level: within ? 'OK' : 'NG', title: '④提出期限内か：2か月以内', detail: `6か月賃金支払日=${input.sixMonthPayDateStr} / 提出予定日=${input.submitDateStr} / 期限目安=${fmtDate(end)}` });
+      if (!within) warnings.push('申請期間外は不受理になり得る（到着日基準にも注意）。');
+
+      // 不足資料（最低限）
+      const baseDocs = [
+        '支給申請書（所定様式）',
+        '就業規則等（正社員定義・非正規区分・転換制度・賃金規定）',
+        '雇用契約書/労働条件通知書（転換前・転換後）',
+        '賃金台帳・給与明細（転換前6か月・転換後6か月）',
+        'キャリアアップ計画（受理控え等）'
+      ];
+      for (const d of baseDocs) missing.push(d);
+
+      const eligible = checks.every(c => c.level !== 'NG');
+      const summary = eligible ? '申請できる可能性が高い（入力上の要件は概ね充足）' : '申請不可/要件未達の可能性（入力上でNGあり）';
+      return { eligible, summary, checks, missing: dedupe(missing), warnings: dedupe(warnings), inc };
+    }
+
+    function runAll() {
+      ensureTemplatesLoaded();
+      const input = getInput();
+      const ev = evaluate(input);
+
+      document.getElementById('judgeSummary').textContent = `${ev.eligible ? 'OK（可能性高）' : 'NG（要件未達の可能性）'}：${ev.summary}`;
+
+      const details = document.getElementById('judgeDetails');
+      details.innerHTML = '';
+      for (const c of ev.checks) {
+        const div = document.createElement('div');
+        div.style.border = '1px solid var(--line)';
+        div.style.borderRadius = '12px';
+        div.style.padding = '10px 12px';
+        div.style.marginBottom = '8px';
+        div.style.background = c.level === 'OK' ? '#ecfdf5' : c.level === 'WARN' ? '#fff7ed' : '#fee2e2';
+        div.innerHTML = `<strong>[${c.level}] ${c.title}</strong><div style="margin-top:4px; font-size:13px;">${c.detail}</div>`;
+        details.appendChild(div);
+      }
+
+      // ②不足資料
+      const missingLines = ev.missing.map(d => `- ${d}`).join('\n') || '- （なし）';
+      const docsTpl = state.templates.documents;
+      document.getElementById('missingDocsOut').value = docsTpl
+        ? renderBracedTemplate(docsTpl, { missing_documents: missingLines })
+        : missingLines;
+
+      // ④チェックリスト
+      const warnLines = ev.warnings.map(w => `- ${w}`).join('\n') || '- （特記事項なし）';
+      const flowTpl = state.templates.flow;
+      document.getElementById('checklistOut').value = flowTpl
+        ? renderBracedTemplate(flowTpl, { ng_warnings: warnLines })
+        : warnLines;
+
+      // ③理由文
+      const reasonTpl = state.templates.reason;
+      const ctx = {
+        company_name: input.companyName || '（会社名）',
+        background_issue: '（背景課題を追記）',
+        worker_role_expectation: '（対象者の役割/期待を追記）',
+        expected_outcome: '（正社員化で実現したいことを追記）',
+        conversion_procedure: '（面接/評価など）',
+        conversion_requirements: '（勤続/評価など客観基準）',
+        conversion_timing: '（毎年◯月/随時など）',
+        worker_name: input.workerName || '（氏名）',
+        hire_date: input.hireDateStr,
+        conversion_date: input.conversionDateStr,
+        employment_before: input.employmentBefore,
+        employment_after: input.employmentAfter,
+        regular_benefit_notes: '就業規則等に基づき適用（賞与/退職金・昇給）。',
+        social_insurance_notes: input.socialInsurance ? '転換後に社会保険適用。' : '社会保険適用状況は要確認。',
+        wage_increase_percent: ev.inc.toFixed(2),
+        wage_before_summary: `${input.wageBefore.toLocaleString()}円/6か月`,
+        wage_after_summary: `${input.wageAfter.toLocaleString()}円/6か月`
+      };
+      document.getElementById('reasonOut').value = reasonTpl ? renderBracedTemplate(reasonTpl, ctx) : JSON.stringify(ctx, null, 2);
+
+      // ⑤警告
+      document.getElementById('warningsOut').textContent = ev.warnings.length ? ev.warnings.join('\n') : '特記事項なし';
+    }
+
+    function copyAll() {
+      const text = [
+        '【①対象判定】',
+        document.getElementById('judgeSummary').textContent || '',
+        '',
+        '【②不足資料】',
+        document.getElementById('missingDocsOut').value || '',
+        '',
+        '【③申請理由文】',
+        document.getElementById('reasonOut').value || '',
+        '',
+        '【④提出前チェックリスト】',
+        document.getElementById('checklistOut').value || '',
+        '',
+        '【⑤NG警告】',
+        document.getElementById('warningsOut').textContent || ''
+      ].join('\n');
+      navigator.clipboard.writeText(text).then(() => alert('コピーしました。'));
+    }
+
+    function showStatus() {
+      ensureTemplatesLoaded();
+      alert(`${document.getElementById('tplPill').textContent}\n${document.getElementById('rulesPill').textContent}`);
+    }
+
+    async function pickRulesFile() {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+        });
+        const file = await handle.getFile();
+        state.rulesMd = await file.text();
+        document.getElementById('rulesPreview').textContent = state.rulesMd || '（空）';
+        document.getElementById('rulesPill').textContent = 'rules.md：読込済';
+      } catch (e) {
+        alert('rules.md の選択をキャンセルしました。');
+      }
+    }
+
+    async function pickTemplatesDir() {
+      try {
+        const dir = await window.showDirectoryPicker();
+        const want = {
+          'reason.txt.txt': 'reason',
+          'documents.txt.txt': 'documents',
+          'flow.txt.txt': 'flow'
+        };
+        for (const [name, key] of Object.entries(want)) {
+          try {
+            const fh = await dir.getFileHandle(name);
+            const file = await fh.getFile();
+            state.templates[key] = await file.text();
+          } catch (_) {}
+        }
+        if (state.templates.reason) document.getElementById('tplReason').value = state.templates.reason;
+        if (state.templates.documents) document.getElementById('tplDocs').value = state.templates.documents;
+        if (state.templates.flow) document.getElementById('tplFlow').value = state.templates.flow;
+        ensureTemplatesLoaded();
+      } catch (e) {
+        alert('templates フォルダ選択をキャンセルしました。');
+      }
+    }
+
+    function saveDraft() {
+      const ids = [
+        'companyName','employeeCount','planStart','planEnd',
+        'conversionRuleExists','conversionRuleObjective','regularHasBonusOrRetirement','regularHasRaise',
+        'nonregularWageDiff','workRulesNotEdited',
+        'workerName','hireDate','conversionDate','employmentBefore','employmentAfter','tenureMonths',
+        'hasProbation','overRetire','isNewGraduate','monthsSinceGrad','foreignExcluded','socialInsurance',
+        'wageBefore','wageAfter','sixMonthPayDate','submitDate',
+        'tplReason','tplDocs','tplFlow'
+      ];
+      const data = { lastUpdated: new Date().toLocaleString('ja-JP') };
+      for (const id of ids) data[id] = (document.getElementById(id) || {}).value;
+      localStorage.setItem('careerupDraft', JSON.stringify(data));
+      alert(`保存しました（${data.lastUpdated}）`);
+    }
+
+    function loadDemo() {
+      const today = new Date();
+      const y = today.getFullYear();
+      const planStart = new Date(y, 3, 1);
+      const planEnd = new Date(y + 4, 2, 31);
+      const hire = new Date(y - 1, 6, 1);
+      const conv = new Date(y, 3, 1);
+      const pay6m = new Date(y, 9, 10);
+      const submit = new Date(y, 10, 1);
+      document.getElementById('companyName').value = '株式会社A商事';
+      document.getElementById('planStart').value = fmtDate(planStart);
+      document.getElementById('planEnd').value = fmtDate(planEnd);
+      document.getElementById('hireDate').value = fmtDate(hire);
+      document.getElementById('conversionDate').value = fmtDate(conv);
+      document.getElementById('sixMonthPayDate').value = fmtDate(pay6m);
+      document.getElementById('submitDate').value = fmtDate(submit);
+
+      // 同梱テンプレを貼り付け（templatesフォルダ選択できない環境でも動かすため）
+      if (!document.getElementById('tplReason').value.trim()) {
+        document.getElementById('tplReason').value = `【申請理由文ドラフト（正社員化コース）】\n\n当社（{company_name}）では、非正規雇用労働者のキャリア形成と定着を図るため、キャリアアップ計画に基づき、雇用区分転換制度を整備し、対象労働者の正社員転換を実施しました。\n\n## 1. 取組の背景・目的\n- 人材確保・定着の課題：{background_issue}\n- 対象労働者の役割・期待：{worker_role_expectation}\n- 正社員化により実現したい状態：{expected_outcome}\n\n## 2. 取組の内容（制度・手続きの客観性）\n- 手続き：{conversion_procedure}\n- 要件：{conversion_requirements}\n- 実施時期：{conversion_timing}\n\n## 3. 対象労働者の転換内容\n- 対象者：{worker_name}（雇入日：{hire_date} / 転換日：{conversion_date}）\n- 転換前：{employment_before}\n- 転換後：{employment_after}\n- 正社員定義（賞与/退職金・昇給）：{regular_benefit_notes}\n- 社会保険：{social_insurance_notes}\n\n## 4. 賃金の処遇改善（3%増額）\n増額率：{wage_increase_percent}%\n- 転換前：{wage_before_summary}\n- 転換後：{wage_after_summary}\n`;
+      }
+      if (!document.getElementById('tplDocs').value.trim()) {
+        document.getElementById('tplDocs').value = `【必要書類（例）・不足資料一覧（正社員化コース）】\n\n---\n### 不足資料（自動出力欄）\n{missing_documents}\n`;
+      }
+      if (!document.getElementById('tplFlow').value.trim()) {
+        document.getElementById('tplFlow').value = `【提出前チェックリスト（正社員化コース）】\n\n## よくある不支給/不受理の芽つぶし\n{ng_warnings}\n`;
+      }
+      ensureTemplatesLoaded();
+      runAll();
+    }
+
+    (function restoreDraft() {
+      const raw = localStorage.getItem('careerupDraft');
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        for (const [k, v] of Object.entries(data)) {
+          const el = document.getElementById(k);
+          if (el && typeof v === 'string') el.value = v;
+        }
+        ensureTemplatesLoaded();
+      } catch (_) {}
+    })();
+
+    (function initDates() {
+      const today = new Date();
+      const y = today.getFullYear();
+      const planStart = new Date(y, 3, 1);
+      const planEnd = new Date(y + 4, 2, 31);
+      const hire = new Date(y - 1, 6, 1);
+      const conv = new Date(y, 3, 1);
+      const pay6m = new Date(y, 9, 10);
+      const submit = new Date(y, 10, 1);
+      const setIfEmpty = (id, val) => { const el = document.getElementById(id); if (el && !el.value) el.value = val; };
+      setIfEmpty('planStart', fmtDate(planStart));
+      setIfEmpty('planEnd', fmtDate(planEnd));
+      setIfEmpty('hireDate', fmtDate(hire));
+      setIfEmpty('conversionDate', fmtDate(conv));
+      setIfEmpty('sixMonthPayDate', fmtDate(pay6m));
+      setIfEmpty('submitDate', fmtDate(submit));
+    })();
+  </script>
+</body>
+</html>
+

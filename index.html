@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>助成金専用Cursor 初号機</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --line: #d9e2ec;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-soft: #e6fffb;
+      --warn: #92400e;
+      --warn-soft: #fff7ed;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-badge {
+      display: inline-block;
+      width: fit-content;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.4;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn, .btn-sub {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-sub {
+      background: #eef2f7;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .header-form {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1.1fr .7fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field select,
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 320px 1fr 420px;
+      gap: 16px;
+      padding: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: calc(100vh - 170px);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .panel-head h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .panel-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .panel-body {
+      padding: 16px 18px 18px;
+    }
+
+    .upload-box {
+      border: 1px dashed #9db2c8;
+      border-radius: 14px;
+      padding: 16px;
+      background: #fcfeff;
+      margin-bottom: 14px;
+    }
+
+    .upload-box strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .mini-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .doc-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .doc-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .doc-item h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .doc-item p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #ecfdf5;
+      color: #166534;
+    }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .prompt-btn {
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .prompt-btn span {
+      display: block;
+      margin-top: 4px;
+      font-weight: 400;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .chat-window {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8fbfd;
+      padding: 14px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 88%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.8;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: #dcfce7;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.ai {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-bottom-left-radius: 4px;
+    }
+
+    .composer {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    .composer textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: #9adbd4;
+    }
+
+    .tab-pane {
+      display: none;
+      gap: 12px;
+    }
+
+    .tab-pane.active {
+      display: grid;
+    }
+
+    .summary-box,
+    .check-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+      color: #374151;
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      min-height: 220px;
+    }
+
+    .summary-box h3,
+    .check-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .summary-box p,
+    .check-box p,
+    .summary-box li,
+    .check-box li {
+      margin: 0;
+      color: #374151;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .summary-box ul,
+    .check-box ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .warn-box {
+      background: var(--warn-soft);
+      border: 1px solid #fed7aa;
+      color: var(--warn);
+      border-radius: 14px;
+      padding: 14px;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .fatal-box {
+      background: #fef2f2; /* 薄い赤 */
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 14px;
+      padding: 14px;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .fatal-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1200px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .header-form {
+        grid-template-columns: 1fr;
+      }
+      .prompt-grid {
+        grid-template-columns: 1fr;
+      }
+      .composer {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <div class="brand">
+          <span class="brand-badge">AI社労士 × 助成金支援</span>
+          <h1>助成金専用Cursor 初号機</h1>
+          <p>制度資料の確認、要件整理、文案作成、不足資料確認を1画面で進める試作版です。</p>
+        </div>
+        <div class="actions">
+          <button class="btn-sub" onclick="saveDraft()">保存</button>
+          <button class="btn-sub" onclick="window.print()">PDF出力</button>
+          <button class="btn" onclick="loadDemo()">デモ読込</button>
+        </div>
+      </div>
+
+      <div class="header-form">
+        <div class="field">
+          <label>助成金名</label>
+          <select id="grantName">
+            <option>キャリアアップ助成金</option>
+            <option>人材開発支援助成金</option>
+            <option>業務改善助成金</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>年度</label>
+          <select id="fiscalYear">
+            <option>2026年度</option>
+            <option>2025年度</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>案件名</label>
+          <input id="projectName" type="text" placeholder="例：A社 正社員転換申請" />
+        </div>
+        <div class="field">
+          <label>顧客名</label>
+          <input id="clientName" type="text" placeholder="例：株式会社A商事" />
+        </div>
+      </div>
+
+      <div class="header-form">
+        <div class="field">
+          <label>対象人数</label>
+          <input id="targetCount" type="number" min="1" placeholder="例：1" />
+        </div>
+        <div class="field">
+          <label>転換予定日</label>
+          <input id="plannedConversionDate" type="date" />
+        </div>
+        <div class="field">
+          <label>転換前雇用区分</label>
+          <select id="employmentBefore">
+            <option value="">（未選択）</option>
+            <option value="有期雇用">有期雇用</option>
+            <option value="無期雇用">無期雇用</option>
+            <option value="パート・アルバイト">パート・アルバイト</option>
+            <option value="派遣">派遣</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>転換後雇用区分</label>
+          <select id="employmentAfter">
+            <option value="">（未選択）</option>
+            <option value="正社員">正社員</option>
+            <option value="多様な正社員">多様な正社員</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="header-form" style="grid-template-columns: 1fr 1fr 2fr 0.8fr;">
+        <div class="field">
+          <label>基本給増額予定額（円）</label>
+          <input id="plannedBasePayIncreaseYen" type="number" min="0" step="1000" placeholder="例：20000" />
+        </div>
+        <div class="field">
+          <label>制度導入目的</label>
+          <input id="purpose" type="text" placeholder="例：人材確保・定着、技能継承、戦力化" />
+        </div>
+        <div class="field">
+          <label>（補足）目的の詳細</label>
+          <input id="purposeDetail" type="text" placeholder="例：採用難のため、経験者の定着を強化したい" />
+        </div>
+        <div class="field">
+          <label> </label>
+          <button class="btn-sub" type="button" onclick="document.getElementById('makeReason')?.click()">理由文生成</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>制度資料エリア</h2>
+          <p>支給要領、Q&A、申請様式を読み込ませる想定のエリアです。初号機ではアップロードUIのラフと参照一覧を実装しています。</p>
+        </div>
+        <div class="panel-body">
+          <div class="upload-box">
+            <strong>資料の読み込み</strong>
+            <div class="mini-actions">
+              <button class="chip" type="button">PDFアップロード</button>
+              <button class="chip" type="button">Wordアップロード</button>
+              <button class="chip" type="button">Q&amp;A追加</button>
+              <button class="chip" type="button">テキスト貼り付け</button>
+            </div>
+          </div>
+
+          <div class="doc-list">
+            <div class="doc-item">
+              <h3>支給要領（2026年度版）</h3>
+              <p>助成対象、支給要件、対象経費、申請スケジュールを確認する中核資料。</p>
+              <span class="status">読込済</span>
+            </div>
+            <div class="doc-item">
+              <h3>Q&amp;A集</h3>
+              <p>例外ケース、対象外経費、提出書類の補足説明を確認する想定。</p>
+              <span class="status">読込済</span>
+            </div>
+            <div class="doc-item">
+              <h3>申請様式一式</h3>
+              <p>申請理由欄、事業内容欄、添付資料欄の文案作成に参照する様式。</p>
+              <span class="status">未更新</span>
+            </div>
+          </div>
+
+          <p class="footer-note">将来はここに、読み込んだ資料の要点抽出、ページ検索、要件ハイライト表示を追加します。</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>対話チャットエリア</h2>
+          <p>対象判定、追加確認事項、必要資料一覧、申請文案作成を対話で進めます。</p>
+        </div>
+        <div class="panel-body">
+          <div class="prompt-grid">
+            <button class="prompt-btn" onclick="applyPrompt('この会社が対象になるか整理してください。対象要件、未確認要件、懸念点に分けてください。')">対象になる？<span>対象・未確認・懸念点を整理</span></button>
+            <button class="prompt-btn" onclick="applyPrompt('不足している要件や確認事項を列挙してください。顧客に確認すべき事項も分けてください。')">不足要件は？<span>追加確認事項を一覧化</span></button>
+            <button class="prompt-btn" onclick="applyPrompt('必要資料を一覧にしてください。顧客提出分と事務所準備分に分けてください。')">必要資料一覧<span>不足資料タブ向けに整理</span></button>
+            <button class="prompt-btn" id="makeReason" type="button">申請理由作成<span>右欄の申請文案へ反映</span></button>
+          </div>
+
+          <div id="chatWindow" class="chat-window">
+            <div class="message ai">こんにちは。助成金専用Cursor 初号機です。
+
+まずは、会社概要、現在の雇用状況、対象にしたい施策を入力してください。入力後、要件整理、不足資料、申請文案を右側に整理していきます。</div>
+          </div>
+
+          <div class="composer">
+            <textarea id="chatInput" placeholder="例：従業員25名の小売業。パート2名を6か月後に正社員転換したい。就業規則改定は未対応。"></textarea>
+            <button class="btn" onclick="sendMessage()">送信</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>成果物エリア</h2>
+          <p>チャット結果を、実務で使う形に構造化して表示します。初号機ではデモ切り替えと静的整理を実装しています。</p>
+        </div>
+        <div class="panel-body">
+          <div class="tabs">
+            <button class="tab active" data-tab="requirements">要件整理</button>
+            <button class="tab" data-tab="documents">不足資料</button>
+            <button class="tab" data-tab="draft">申請文案</button>
+            <button class="tab" data-tab="risks">注意点</button>
+            <button class="tab" data-tab="memo">進行メモ</button>
+          </div>
+
+          <div id="requirements" class="tab-pane active">
+            <div class="summary-box">
+              <h3>対象判定</h3>
+              <p id="reqJudge">現時点では対象判定前です。会社概要と実施予定内容を入力してください。</p>
+            </div>
+            <div class="summary-box">
+              <h3>確認済要件</h3>
+              <ul id="reqConfirmed">
+                <li>まだ整理されていません。</li>
+              </ul>
+            </div>
+            <div class="summary-box">
+              <h3>未確認要件</h3>
+              <ul id="reqPending">
+                <li>就業規則の整備状況</li>
+                <li>雇用契約書の整備状況</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="documents" class="tab-pane">
+            <div class="summary-box">
+              <h3>不足資料チェック（自動）</h3>
+              <p style="margin:0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.7;">
+                必要になりやすい資料をチェックし、未チェックを「不足の可能性」として表示します。
+              </p>
+              <div id="fatalIssueBox" class="fatal-box" style="margin-bottom: 12px;">
+                <strong>致命的不備フラグ</strong>
+                <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
+              </div>
+              <div id="missingDocsChecklist" class="check-box"></div>
+            </div>
+            <div class="summary-box">
+              <h3>顧客に依頼する資料</h3>
+              <ul id="docClient">
+                <li>会社概要</li>
+                <li>対象者の雇用契約書</li>
+              </ul>
+            </div>
+            <div class="summary-box">
+              <h3>事務所内で準備する資料</h3>
+              <ul id="docOffice">
+                <li>申請様式の確認</li>
+                <li>就業規則改定案の確認</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="draft" class="tab-pane">
+            <div class="summary-box">
+              <h3>申請理由の下書き</h3>
+              <div id="draftText" class="result-box"></div>
+            </div>
+          </div>
+
+          <div id="risks" class="tab-pane">
+            <div class="warn-box" id="riskText">対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。</div>
+          </div>
+
+          <div id="memo" class="tab-pane">
+            <div class="check-box">
+              <h3>進行メモ</h3>
+              <ul id="memoList">
+                <li>案件情報未入力</li>
+                <li>初回ヒアリング前</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panes = document.querySelectorAll('.tab-pane');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatInput = document.getElementById('chatInput');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    function addMessage(text, role = 'ai') {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      div.textContent = text;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function applyPrompt(text) {
+      chatInput.value = text;
+      chatInput.focus();
+    }
+
+    function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      chatInput.value = '';
+
+      const lower = text.toLowerCase();
+      let reply = '確認しました。右側の成果物エリアに整理しながら進めます。';
+
+      if (text.includes('対象') || text.includes('要件')) {
+        document.getElementById('reqJudge').textContent = '対象可能性あり。雇用区分、転換時期、就業規則整備状況、賃金差額の確認が必要です。';
+        document.getElementById('reqConfirmed').innerHTML = '<li>正社員転換を予定している</li><li>対象者が既存の有期雇用者である可能性が高い</li>';
+        document.getElementById('reqPending').innerHTML = '<li>転換前後の賃金規程差額</li><li>就業規則への規定整備</li><li>転換前6か月以上の雇用実績</li>';
+        reply = '対象判定のたたき台を作成しました。未確認要件として、就業規則、転換前後の賃金、雇用期間を確認してください。';
+      }
+
+      if (text.includes('資料')) {
+        document.getElementById('docClient').innerHTML = '<li>対象者の雇用契約書</li><li>出勤簿またはタイムカード</li><li>賃金台帳</li><li>会社概要資料</li>';
+        document.getElementById('docOffice').innerHTML = '<li>就業規則の該当条項確認</li><li>申請様式ドラフト作成</li><li>支給申請期限の確認</li>';
+        reply = '必要資料一覧を更新しました。顧客提出分と事務所準備分に分けています。';
+      }
+
+      if (text.includes('申請理由') || text.includes('文案')) {
+        const clientName = document.getElementById("clientName").value || "当社";
+        document.getElementById('draftText').innerText = generateReasonText({ company: clientName });
+        reply = '申請理由文を自動生成し、右欄（申請文案タブ）に反映しました。';
+      }
+
+      if (text.includes('注意') || text.includes('リスク')) {
+        document.getElementById('riskText').textContent = '就業規則の整備時期が転換前後で不整合になると支給対象外となる可能性があります。また、対象者の雇用区分、賃金差額、転換日、提出期限の管理漏れに注意してください。';
+        reply = '注意点を整理しました。特に就業規則整備時期と転換日、賃金差額の確認が重要です。';
+      }
+
+      updateMemo();
+      setTimeout(() => addMessage(reply, 'ai'), 260);
+    }
+
+    function updateMemo() {
+      const project = document.getElementById('projectName').value || '案件名未入力';
+      const client = document.getElementById('clientName').value || '顧客名未入力';
+      document.getElementById('memoList').innerHTML = `
+        <li>案件：${project}</li>
+        <li>顧客：${client}</li>
+        <li>次アクション：未確認要件をヒアリングする</li>
+        <li>状態：初期整理中</li>
+      `;
+    }
+
+    function loadDemo() {
+      document.getElementById('grantName').value = 'キャリアアップ助成金';
+      document.getElementById('fiscalYear').value = '2026年度';
+      document.getElementById('projectName').value = 'A社 正社員転換申請';
+      document.getElementById('clientName').value = '株式会社A商事';
+      document.getElementById('targetCount').value = 1;
+      document.getElementById('plannedConversionDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('employmentBefore').value = '有期雇用';
+      document.getElementById('employmentAfter').value = '正社員';
+      document.getElementById('plannedBasePayIncreaseYen').value = 20000;
+      document.getElementById('purpose').value = '人材確保・定着、戦力化';
+      document.getElementById('purposeDetail').value = '採用難のため、経験者の定着を強化したい';
+      // 不足資料チェック（デモ）
+      const setChecked = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = v;
+      };
+      setChecked("doc_employment_contract", true);
+      setChecked("doc_working_conditions_notice", true);
+      setChecked("doc_work_rules", false);
+      setChecked("doc_wage_rules", false);
+      setChecked("doc_conversion_rules", false);
+      setChecked("doc_attendance", false);
+      setChecked("doc_wage_ledger", false);
+      renderMissingDocsChecklist();
+      updateFatalIssues();
+      document.getElementById('reqJudge').textContent = '対象可能性あり。就業規則整備、転換前後賃金差額、雇用期間の確認が必要です。';
+      document.getElementById('reqConfirmed').innerHTML = '<li>有期雇用者を正社員転換予定</li><li>対象者が既に一定期間勤務している</li>';
+      document.getElementById('reqPending').innerHTML = '<li>就業規則改定の実施時期</li><li>転換後賃金が3%以上増額されているか</li><li>支給申請期限の確認</li>';
+      document.getElementById('docClient').innerHTML = '<li>雇用契約書</li><li>出勤簿</li><li>賃金台帳</li><li>会社概要</li>';
+      document.getElementById('docOffice').innerHTML = '<li>就業規則の該当条文確認</li><li>支給申請様式のドラフト</li><li>期限管理表の作成</li>';
+      document.getElementById('draftText').innerText = generateReasonText(collectReasonFormData());
+      document.getElementById('riskText').textContent = '転換日より前に就業規則改定が完了しているか、転換後賃金が要件を満たすか、対象者の雇用実績期間が基準を満たすかを確認してください。';
+      updateMemo();
+      addMessage('デモ案件を読み込みました。右側に整理済みの内容を表示しています。', 'ai');
+    }
+
+    // --- 申請理由文 自動生成 ---
+    // 将来 `rules.md` の判定結果や `templates/reason.txt.txt` を反映できるよう、
+    // 生成ロジックは関数として独立させています。
+    function generateReasonText(data) {
+      const countText = data.targetCount ? `${data.targetCount}名` : "対象労働者";
+      const plannedDateText = data.plannedConversionDate ? `（転換予定日：${data.plannedConversionDate}）` : "";
+      const beforeText = data.employmentBefore ? `転換前雇用区分は「${data.employmentBefore}」であり、` : "";
+      const afterText = data.employmentAfter ? `転換後雇用区分は「${data.employmentAfter}」とします。` : "";
+      const basePayText =
+        data.plannedBasePayIncreaseYen !== null && data.plannedBasePayIncreaseYen !== undefined && data.plannedBasePayIncreaseYen !== ""
+          ? `基本給は賃金規程に基づき、${Number(data.plannedBasePayIncreaseYen).toLocaleString()}円の増額を予定しています。`
+          : "転換後は賃金規程に基づき基本給を増額し、処遇改善を図る予定です。";
+      const purposeText = data.purpose ? data.purpose : "人材確保および定着促進";
+      const purposeDetailText = data.purposeDetail ? `（補足：${data.purposeDetail}）` : "";
+
+      return `
+当社（${data.company || "当社"}）では、${purposeText}を目的として、
+非正規雇用労働者の正社員転換制度を整備しております。
+
+対象人数は${countText}です。${plannedDateText}
+${beforeText}${afterText}
+
+対象労働者は一定期間継続勤務しており、
+勤務状況および能力を踏まえ正社員としての活躍が期待されるため、
+正社員転換を実施する予定です。
+
+また、${basePayText}
+
+今後も評価制度の透明化および人材育成体制の強化を進め、
+安定した雇用環境の整備に取り組んでまいります。
+${purposeDetailText}
+`;
+    }
+
+    function collectReasonFormData() {
+      return {
+        company: document.querySelector("#clientName")?.value,
+        targetCount: document.querySelector("#targetCount")?.value,
+        plannedConversionDate: document.querySelector("#plannedConversionDate")?.value,
+        employmentBefore: document.querySelector("#employmentBefore")?.value,
+        employmentAfter: document.querySelector("#employmentAfter")?.value,
+        plannedBasePayIncreaseYen: document.querySelector("#plannedBasePayIncreaseYen")?.value,
+        purpose: document.querySelector("#purpose")?.value,
+        purposeDetail: document.querySelector("#purposeDetail")?.value
+      };
+    }
+
+    // 「申請理由作成」ボタン押下時に実行
+    document.querySelector("#makeReason").onclick = () => {
+      const reason = generateReasonText(collectReasonFormData());
+
+      document.querySelector("#draftText").innerText = reason;
+    };
+
+    // --- 不足資料チェック（正社員化コース） ---
+    const MISSING_DOCS = [
+      { id: "doc_employment_contract", label: "雇用契約書" },
+      { id: "doc_work_rules", label: "就業規則" },
+      { id: "doc_wage_rules", label: "賃金規程" },
+      { id: "doc_conversion_rules", label: "転換制度規程" },
+      { id: "doc_attendance", label: "出勤簿" },
+      { id: "doc_wage_ledger", label: "賃金台帳" },
+      { id: "doc_working_conditions_notice", label: "労働条件通知書" }
+    ];
+
+    function getDocChecked(id) {
+      const el = document.getElementById(id);
+      return el ? !!el.checked : false;
+    }
+
+    function getInputValue(id) {
+      const el = document.getElementById(id);
+      return el ? String(el.value ?? "").trim() : "";
+    }
+
+    function updateFatalIssues() {
+      const issues = [];
+
+      const plannedConversionDate = getInputValue("plannedConversionDate");
+      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
+      const employmentBefore = getInputValue("employmentBefore");
+      const employmentAfter = getInputValue("employmentAfter");
+
+      // ルール1: 転換制度規程が未チェック
+      if (!getDocChecked("doc_conversion_rules")) {
+        issues.push("転換制度規程が未確認です。制度の根拠が確認できないため、申請不可の可能性があります。");
+      }
+
+      // ルール2: 転換予定日が入力されているのに就業規則が未チェック
+      if (plannedConversionDate && !getDocChecked("doc_work_rules")) {
+        issues.push("転換予定日は入力済みですが、就業規則が未確認です。転換制度の規定根拠不足となる可能性があります。");
+      }
+
+      // ルール3: 基本給増額予定額が入力されているのに賃金規程が未チェック
+      if (plannedBasePayIncreaseYen && !getDocChecked("doc_wage_rules")) {
+        issues.push("基本給増額予定額は入力済みですが、賃金規程が未確認です。増額根拠を説明できない可能性があります。");
+      }
+
+      // ルール4: 転換前/後雇用区分が未入力
+      if (!employmentBefore || !employmentAfter) {
+        issues.push("転換前後の雇用区分が未入力です。要件判定ができません。");
+      }
+
+      const box = document.getElementById("fatalIssueBox");
+      const text = document.getElementById("fatalIssueText");
+      if (!box || !text) return;
+
+      if (issues.length === 0) {
+        text.innerText = "現時点で致命的不備は検出されていません";
+        return;
+      }
+
+      text.innerHTML = `<ul style="margin:0; padding-left: 1.2em;">${issues.map(i => `<li>${i}</li>`).join("")}</ul>`;
+    }
+
+    function getMissingDocPriority(docId) {
+      // 未チェック前提で優先度を算定（高いほど先頭）
+      // 例：
+      // - 転換制度規程が未チェックなら最優先
+      // - 転換予定日が入力されているのに就業規則が未チェックなら高
+      // - 基本給増額予定額が入力されているのに賃金規程が未チェックなら高
+      const plannedConversionDate = getInputValue("plannedConversionDate");
+      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
+
+      if (docId === "doc_conversion_rules") return 300;
+
+      if (docId === "doc_work_rules") {
+        return plannedConversionDate ? 220 : 120;
+      }
+
+      if (docId === "doc_wage_rules") {
+        return plannedBasePayIncreaseYen ? 210 : 110;
+      }
+
+      // その他は中〜低（案件の進行に応じて増やせる）
+      return 100;
+    }
+
+    function getMissingDocReasons(docId) {
+      const plannedConversionDate = getInputValue("plannedConversionDate");
+      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
+      const reasons = [];
+
+      if (docId === "doc_conversion_rules") {
+        reasons.push("転換制度規程が未確認だと、支給要件（制度の客観性）の説明が組み立てにくいです。");
+      }
+      if (docId === "doc_work_rules" && plannedConversionDate) {
+        reasons.push("転換予定日が入力されています（転換の実施が具体化）→ 就業規則の整備・周知・整合確認が優先です。");
+      }
+      if (docId === "doc_wage_rules" && plannedBasePayIncreaseYen) {
+        reasons.push("基本給増額予定額が入力されています → 賃金規程（算定根拠）の確認が優先です。");
+      }
+      return reasons;
+    }
+
+    function renderMissingDocsChecklist() {
+      const box = document.getElementById("missingDocsChecklist");
+      if (!box) return;
+
+      // チェック/入力に連動した致命的不備表示も更新
+      updateFatalIssues();
+
+      const docsWithMeta = MISSING_DOCS.map((d) => {
+        const checked = getDocChecked(d.id);
+        const priority = checked ? -1 : getMissingDocPriority(d.id);
+        const reasons = checked ? [] : getMissingDocReasons(d.id);
+        return { ...d, checked, priority, reasons };
+      });
+
+      // 未確認（未チェック）を優先度順に上、確認済は下
+      docsWithMeta.sort((a, b) => {
+        if (a.checked !== b.checked) return a.checked ? 1 : -1;
+        return b.priority - a.priority;
+      });
+
+      box.innerHTML = docsWithMeta.map((d) => {
+        const badgeStyle = d.checked
+          ? "background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;"
+          : d.priority >= 300
+            ? "background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"
+            : d.priority >= 210
+              ? "background:#fff7ed;color:#92400e;border:1px solid #fed7aa;"
+              : "background:#eef2f7;color:#111827;border:1px solid #d9e2ec;";
+
+        const badgeText = d.checked
+          ? "確認済"
+          : d.priority >= 300
+            ? "最優先"
+            : d.priority >= 210
+              ? "優先"
+              : "不足の可能性";
+
+        const reasonsHtml = d.reasons && d.reasons.length
+          ? `<div style="margin-top:6px; font-size:12px; color:#92400e; line-height:1.6;">
+               ${d.reasons.map(r => `- ${r}`).join("<br/>")}
+             </div>`
+          : `<div style="margin-top:6px; font-size:12px; color: var(--muted); line-height:1.6;">未確認の場合は早めの回収・整備を推奨します。</div>`;
+
+        return `
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff; margin-bottom:8px;">
+            <label style="display:flex; gap:10px; cursor:pointer; margin:0; flex: 1;">
+              <input type="checkbox" id="${d.id}" ${d.checked ? "checked" : ""} />
+              <div>
+                <div style="font-weight:700; font-size:14px;">${d.label}</div>
+                ${reasonsHtml}
+              </div>
+            </label>
+            <span style="display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; ${badgeStyle}">${badgeText}</span>
+          </div>
+        `;
+      }).join("");
+
+      // innerHTMLで作り直すためイベントも付け直す
+      for (const d of MISSING_DOCS) {
+        const el = document.getElementById(d.id);
+        if (el) el.onchange = () => renderMissingDocsChecklist();
+      }
+    }
+
+    // 初回描画
+    renderMissingDocsChecklist();
+
+    // 入力内容との連動（例：転換予定日・基本給増額予定額の入力で優先度が変わる）
+    ["plannedConversionDate", "plannedBasePayIncreaseYen", "employmentBefore", "employmentAfter"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", () => renderMissingDocsChecklist());
+    });
+
+    function saveDraft() {
+      const data = {
+        grantName: document.getElementById('grantName').value,
+        fiscalYear: document.getElementById('fiscalYear').value,
+        projectName: document.getElementById('projectName').value,
+        clientName: document.getElementById('clientName').value,
+        targetCount: document.getElementById('targetCount')?.value,
+        plannedConversionDate: document.getElementById('plannedConversionDate')?.value,
+        employmentBefore: document.getElementById('employmentBefore')?.value,
+        employmentAfter: document.getElementById('employmentAfter')?.value,
+        plannedBasePayIncreaseYen: document.getElementById('plannedBasePayIncreaseYen')?.value,
+        purpose: document.getElementById('purpose')?.value,
+        purposeDetail: document.getElementById('purposeDetail')?.value,
+        doc_employment_contract: getDocChecked("doc_employment_contract"),
+        doc_work_rules: getDocChecked("doc_work_rules"),
+        doc_wage_rules: getDocChecked("doc_wage_rules"),
+        doc_conversion_rules: getDocChecked("doc_conversion_rules"),
+        doc_attendance: getDocChecked("doc_attendance"),
+        doc_wage_ledger: getDocChecked("doc_wage_ledger"),
+        doc_working_conditions_notice: getDocChecked("doc_working_conditions_notice"),
+        lastUpdated: new Date().toLocaleString('ja-JP')
+      };
+      localStorage.setItem('joseikinCursorDraft', JSON.stringify(data));
+      addMessage(`下書きを保存しました。\n助成金：${data.grantName}\n案件：${data.projectName || '未入力'}\n更新：${data.lastUpdated}`, 'ai');
+    }
+
+    (function restoreDraft() {
+      const raw = localStorage.getItem('joseikinCursorDraft');
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        if (data.grantName) document.getElementById('grantName').value = data.grantName;
+        if (data.fiscalYear) document.getElementById('fiscalYear').value = data.fiscalYear;
+        if (data.projectName) document.getElementById('projectName').value = data.projectName;
+        if (data.clientName) document.getElementById('clientName').value = data.clientName;
+        if (data.targetCount) document.getElementById('targetCount').value = data.targetCount;
+        if (data.plannedConversionDate) document.getElementById('plannedConversionDate').value = data.plannedConversionDate;
+        if (data.employmentBefore) document.getElementById('employmentBefore').value = data.employmentBefore;
+        if (data.employmentAfter) document.getElementById('employmentAfter').value = data.employmentAfter;
+        if (data.plannedBasePayIncreaseYen) document.getElementById('plannedBasePayIncreaseYen').value = data.plannedBasePayIncreaseYen;
+        if (data.purpose) document.getElementById('purpose').value = data.purpose;
+        if (data.purposeDetail) document.getElementById('purposeDetail').value = data.purposeDetail;
+        const restoreChecked = (id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (data[id] === true || data[id] === false) el.checked = data[id];
+        };
+        restoreChecked("doc_employment_contract");
+        restoreChecked("doc_work_rules");
+        restoreChecked("doc_wage_rules");
+        restoreChecked("doc_conversion_rules");
+        restoreChecked("doc_attendance");
+        restoreChecked("doc_wage_ledger");
+        restoreChecked("doc_working_conditions_notice");
+        renderMissingDocsChecklist();
+        updateFatalIssues();
+        updateMemo();
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>
