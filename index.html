@@ -604,12 +604,12 @@
           <input id="applicationDeadline" type="text" placeholder="（自動表示）" readonly />
         </div>
       </div>
-    </header>
 
-    <section class="fatal-box" id="fatalIssueBox">
-      <h3>致命的不備フラグ</h3>
-      <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
-    </section>
+      <section class="fatal-box" id="fatalIssueBox">
+        <h3>致命的不備フラグ</h3>
+        <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
+      </section>
+    </header>
 
     <main class="main">
       <section class="panel">
@@ -1030,6 +1030,22 @@ ${purposeDetailText}
         warnings.push("転換後に試用期間を設ける場合、その期間は正社員として扱われず、申請区分や賃金比較の起算点に影響する可能性があります。");
       }
 
+      // 正社員定義（(賞与 or 退職金) and 昇給）
+      if (e.regularHasBonus !== null && e.regularHasRetirement !== null && e.regularHasRaise !== null) {
+        const hasBonusOrRetirement = e.regularHasBonus === true || e.regularHasRetirement === true;
+        const hasRaise = e.regularHasRaise === true;
+        if (!(hasBonusOrRetirement && hasRaise)) {
+          warnings.push("正社員定義要件を再確認してください（賞与/退職金/昇給）。");
+        }
+      }
+
+      // 外国人区分（未選択は注意、対象外類型は注意）
+      if (!e.foreignCategory) {
+        warnings.push("対象者の在留資格・外国人区分を確認してください。");
+      } else if (["trainee", "epa_pre_pass", "ssw_1"].includes(e.foreignCategory)) {
+        warnings.push("外国人区分が対象外類型に該当する可能性があります。");
+      }
+
       if (!e.sixMonthPayDate) {
         warnings.push("申請期限：未算定");
       } else {
@@ -1056,6 +1072,36 @@ ${purposeDetailText}
       const employmentAfter = getInputValue("employmentAfter");
       const eligibility = collectEligibilityData();
 
+      // 外国人区分（対象外）
+      // ※未選択は致命的不備にしない（注意点タブで促す）
+      if (eligibility.foreignCategory === "trainee") {
+        issues.push("外国人技能実習生は正社員化コースの対象外です。");
+      }
+      if (eligibility.foreignCategory === "epa_pre_pass") {
+        issues.push("EPA受入れ人材（合格前）は正社員化コースの対象外です。");
+      }
+      if (eligibility.foreignCategory === "ssw_1") {
+        issues.push("特定技能第1号は正社員化コースの対象外です。");
+      }
+
+      // 正社員定義（(賞与あり OR 退職金あり) AND 昇給あり）
+      // - 未選択があれば「確認未完了」
+      // - 選択済みで要件未達なら「満たしていない」
+      if (
+        eligibility.regularHasBonus === null ||
+        eligibility.regularHasRetirement === null ||
+        eligibility.regularHasRaise === null
+      ) {
+        issues.push("正社員定義の確認が未完了です。");
+      } else {
+        const hasBonusOrRetirement =
+          eligibility.regularHasBonus === true || eligibility.regularHasRetirement === true;
+        const hasRaise = eligibility.regularHasRaise === true;
+        if ((!hasBonusOrRetirement) || (!hasRaise)) {
+          issues.push("正社員定義（賞与または退職金＋昇給）を満たしていません。");
+        }
+      }
+
       // ルール1: 転換制度規程が未チェック
       if (!getDocChecked("doc_conversion_rules")) {
         issues.push("転換制度規程が未確認です。制度の根拠が確認できないため、申請不可の可能性があります。");
@@ -1075,25 +1121,6 @@ ${purposeDetailText}
       // ルール4: 転換前/後雇用区分が未入力
       if (!employmentBefore || !employmentAfter) {
         issues.push("転換前後の雇用区分が未入力です。要件判定ができません。");
-      }
-
-      // ルール5: 正社員定義が未達（(賞与あり OR 退職金あり) AND 昇給あり）
-      const definitionInputsKnown =
-        eligibility.regularHasBonus !== null &&
-        eligibility.regularHasRetirement !== null &&
-        eligibility.regularHasRaise !== null;
-      if (definitionInputsKnown) {
-        const hasBonusOrRetirement =
-          eligibility.regularHasBonus === true || eligibility.regularHasRetirement === true;
-        const hasRaise = eligibility.regularHasRaise === true;
-        if (!(hasBonusOrRetirement && hasRaise)) {
-          issues.push("正社員定義（賞与または退職金＋昇給）を満たしていません。");
-        }
-      }
-
-      // ルール6: 外国人区分（対象外の可能性が高い）
-      if (["trainee", "epa_pre_pass", "ssw_1"].includes(eligibility.foreignCategory)) {
-        issues.push("対象外の可能性が高い外国人区分です。");
       }
 
       // ルール7: 6か月分賃金の支払日（実際）が未入力
