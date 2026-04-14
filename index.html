@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>助成金専用Cursor 初号機</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -15,10 +16,15 @@
       --accent-soft: #e6fffb;
       --warn: #92400e;
       --warn-soft: #fff7ed;
+      --danger: #991b1b;
+      --danger-soft: #fff1f1;
+      --danger-line: #ef9a9a;
+      --memo: #1b4e8b;
+      --memo-soft: #eef6ff;
+      --memo-line: #9ac3e5;
       --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
       --radius: 16px;
     }
-
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -26,401 +32,114 @@
       background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
       color: var(--text);
     }
-
-    .app {
-      min-height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
-
+    .app { min-height: 100vh; }
     .header {
       position: sticky;
       top: 0;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255,255,255,0.92);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--line);
       padding: 16px 20px;
     }
-
-    .header-top {
+    .chip {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #dff7f3;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .hero {
+      margin-top: 12px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
       gap: 16px;
+      align-items: start;
       flex-wrap: wrap;
     }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .brand-badge {
-      display: inline-block;
-      width: fit-content;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 5px 10px;
-      border-radius: 999px;
-    }
-
-    .brand h1 {
+    h1 {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.4;
+      font-size: 26px;
     }
-
-    .brand p {
-      margin: 0;
+    .subtitle {
+      margin-top: 8px;
       color: var(--muted);
-      font-size: 13px;
     }
-
-    .actions {
+    .toolbar {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
+      margin-top: 16px;
     }
-
-    .btn, .btn-sub {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 16px;
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 22px;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      font-size: 14px;
+      box-shadow: var(--shadow);
     }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .btn-sub {
-      background: #eef2f7;
-      color: var(--text);
-      border: 1px solid var(--line);
-    }
-
-    .header-form {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1.1fr .7fr 1fr 1fr;
-      gap: 12px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field label {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .field select,
-    .field input,
-    .field textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 11px 12px;
-      font-size: 14px;
-      font-family: inherit;
-      background: #fff;
-      color: var(--text);
-    }
-
+    .primary-btn { background: var(--accent); color: #fff; }
+    .secondary-btn { background: #eef2f7; color: #1f2937; }
     .main {
-      display: grid;
-      grid-template-columns: 320px 1fr 420px;
-      gap: 16px;
-      padding: 16px;
-      align-items: start;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
     }
-
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      min-height: calc(100vh - 170px);
-      overflow: hidden;
+      padding: 20px;
     }
-
-    .panel-head {
-      padding: 16px 18px;
-      border-bottom: 1px solid var(--line);
-      background: #fbfdff;
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      margin-top: 18px;
     }
-
-    .panel-head h2 {
-      margin: 0 0 6px;
-      font-size: 18px;
-    }
-
-    .panel-head p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .panel-body {
-      padding: 16px 18px 18px;
-    }
-
-    .upload-box {
-      border: 1px dashed #9db2c8;
-      border-radius: 14px;
-      padding: 16px;
-      background: #fcfeff;
-      margin-bottom: 14px;
-    }
-
-    .upload-box strong {
+    .field { grid-column: span 4; }
+    .field.span-6 { grid-column: span 6; }
+    .field.span-8 { grid-column: span 8; }
+    .field.span-12 { grid-column: span 12; }
+    .field label {
       display: block;
-      margin-bottom: 6px;
-    }
-
-    .mini-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 13px;
-      background: #fff;
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    .doc-list {
-      display: grid;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .doc-item {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .doc-item h3 {
-      margin: 0 0 6px;
-      font-size: 14px;
-    }
-
-    .doc-item p {
-      margin: 0;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .status {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      border-radius: 999px;
-      padding: 4px 8px;
-      background: #ecfdf5;
-      color: #166534;
-    }
-
-    .prompt-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .prompt-btn {
-      text-align: left;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px;
-      background: #fff;
-      cursor: pointer;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .prompt-btn span {
-      display: block;
-      margin-top: 4px;
-      font-weight: 400;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .chat-window {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #f8fbfd;
-      padding: 14px;
-      min-height: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .message {
-      max-width: 88%;
-      padding: 12px 14px;
-      border-radius: 16px;
-      line-height: 1.8;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-
-    .message.user {
-      align-self: flex-end;
-      background: #dcfce7;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message.ai {
-      align-self: flex-start;
-      background: #ffffff;
-      border: 1px solid var(--line);
-      border-bottom-left-radius: 4px;
-    }
-
-    .composer {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-    }
-
-    .composer textarea {
-      min-height: 96px;
-      resize: vertical;
-    }
-
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .tab {
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 999px;
-      padding: 9px 12px;
+      margin-bottom: 8px;
       font-size: 13px;
       font-weight: 700;
-      cursor: pointer;
+      color: #4b5563;
     }
-
-    .tab.active {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-color: #9adbd4;
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 15px 16px;
+      font-size: 14px;
+      background: #fff;
     }
-
-    .tab-pane {
-      display: none;
-      gap: 12px;
-    }
-
-    .tab-pane.active {
+    input[readonly] { background: #f8fafc; }
+    textarea { min-height: 110px; resize: vertical; }
+    .inline-grid {
       display: grid;
+      grid-template-columns: 1.2fr 1.2fr 1.2fr 1.8fr auto;
+      gap: 12px;
+      align-items: end;
     }
-
-    .summary-box,
-    .check-box {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      background: #fff;
-    }
-
-    .result-box {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      background: #fff;
-      color: #374151;
-      font-size: 14px;
-      line-height: 1.8;
-      white-space: pre-wrap;
-      min-height: 220px;
-    }
-
-    .summary-box h3,
-    .check-box h3 {
-      margin: 0 0 8px;
-      font-size: 15px;
-    }
-
-    .summary-box p,
-    .check-box p,
-    .summary-box li,
-    .check-box li {
-      margin: 0;
-      color: #374151;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-
-    .summary-box ul,
-    .check-box ul {
-      margin: 0;
-      padding-left: 1.2em;
-    }
-
-    .warn-box {
-      background: var(--warn-soft);
-      border: 1px solid #fed7aa;
-      color: var(--warn);
-      border-radius: 14px;
-      padding: 14px;
-      line-height: 1.8;
-      font-size: 14px;
-    }
-
     .fatal-box {
       margin: 16px 0;
       padding: 16px;
-      border: 1px solid #e59a9a;
-      background: #fff1f1;
-      color: #8b1e1e;
+      border: 1px solid var(--danger-line);
+      background: var(--danger-soft);
+      color: var(--danger);
       border-radius: 12px;
     }
-
-    .fatal-box h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-
-    #fatalIssueText ul {
-      margin: 8px 0 0 20px;
-    }
-
+    .fatal-box h3,
+    .risk-box h3,
+    .memo-box h3 { margin: 0 0 8px; font-size: 16px; }
     .risk-box {
       margin: 16px 0;
       padding: 16px;
@@ -429,1034 +148,598 @@
       color: #7a5a00;
       border-radius: 12px;
     }
-
-    .risk-box h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-
     .memo-box {
       margin: 16px 0;
       padding: 16px;
-      border: 1px solid #9ac3e5;
-      background: #eef6ff;
-      color: #1b4e8b;
+      border: 1px solid var(--memo-line);
+      background: var(--memo-soft);
+      color: var(--memo);
       border-radius: 12px;
     }
-
-    .memo-box h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
+    #fatalIssueText ul, #warningText ul, #memoText ul { margin: 8px 0 0 20px; }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+      margin-top: 16px;
     }
-
+    .card-title { margin: 0 0 10px; font-size: 18px; }
+    .result-block {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fbfdff;
+      margin-bottom: 14px;
+    }
+    .result-block h4 { margin: 0 0 8px; font-size: 15px; }
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3730a3;
+      margin-bottom: 10px;
+    }
     .footer-note {
       margin-top: 12px;
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.7;
+      font-size: 13px;
+      line-height: 1.8;
     }
-
-    @media (max-width: 1200px) {
-      .main {
-        grid-template-columns: 1fr;
-      }
-      .panel {
-        min-height: auto;
-      }
+    @media (max-width: 900px) {
+      .field, .field.span-6, .field.span-8, .inline-grid > div { grid-column: span 12; }
+      .form-grid, .inline-grid, .two-col { grid-template-columns: 1fr; }
     }
-
-    @media (max-width: 760px) {
-      .header-form {
-        grid-template-columns: 1fr;
-      }
-      .prompt-grid {
-        grid-template-columns: 1fr;
-      }
-      .composer {
-        grid-template-columns: 1fr;
-      }
+    @media print {
+      .header, button { display:none !important; }
+      body { background:#fff; }
+      .panel { box-shadow:none; border:none; }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="header">
-      <div class="header-top">
-        <div class="brand">
-          <span class="brand-badge">AI社労士 × 助成金支援</span>
+      <span class="chip">AI社労士 × 助成金支援</span>
+      <div class="hero">
+        <div>
           <h1>助成金専用Cursor 初号機</h1>
-          <p>制度資料の確認、要件整理、文案作成、不足資料確認を1画面で進める試作版です。</p>
-        </div>
-        <div class="actions">
-          <button class="btn-sub" onclick="saveDraft()">保存</button>
-          <button class="btn-sub" onclick="window.print()">PDF出力</button>
-          <button class="btn" onclick="loadDemo()">デモ読込</button>
-        </div>
-      </div>
-
-      <div class="header-form">
-        <div class="field">
-          <label>助成金名</label>
-          <select id="grantName">
-            <option>キャリアアップ助成金</option>
-            <option>人材開発支援助成金</option>
-            <option>業務改善助成金</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>年度</label>
-          <select id="fiscalYear">
-            <option>2026年度</option>
-            <option>2025年度</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>案件名</label>
-          <input id="projectName" type="text" placeholder="例：A社 正社員転換申請" />
-        </div>
-        <div class="field">
-          <label>顧客名</label>
-          <input id="clientName" type="text" placeholder="例：株式会社A商事" />
+          <div class="subtitle">制度資料の確認、要件整理、文案作成、不足資料確認を1画面で進める試作版です。</div>
+          <div class="toolbar">
+            <button class="secondary-btn" type="button" onclick="saveDraft()">保存</button>
+            <button class="secondary-btn" type="button" onclick="exportDiagnosticPdf()">PDF出力</button>
+            <button class="primary-btn" type="button" onclick="loadDemo()">デモ読込</button>
+          </div>
         </div>
       </div>
-
-      <div class="header-form">
-        <div class="field">
-          <label>対象人数</label>
-          <input id="targetCount" type="number" min="1" placeholder="例：1" />
-        </div>
-        <div class="field">
-          <label>転換予定日</label>
-          <input id="plannedConversionDate" type="date" />
-        </div>
-        <div class="field">
-          <label>転換前雇用区分</label>
-          <select id="employmentBefore">
-            <option value="">（未選択）</option>
-            <option value="有期雇用">有期雇用</option>
-            <option value="無期雇用">無期雇用</option>
-            <option value="パート・アルバイト">パート・アルバイト</option>
-            <option value="派遣">派遣</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>転換後雇用区分</label>
-          <select id="employmentAfter">
-            <option value="">（未選択）</option>
-            <option value="正社員">正社員</option>
-            <option value="多様な正社員">多様な正社員</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="header-form" style="grid-template-columns: 1fr 1fr 2fr 0.8fr;">
-        <div class="field">
-          <label>基本給増額予定額（円）</label>
-          <input id="plannedBasePayIncreaseYen" type="number" min="0" step="1000" placeholder="例：20000" />
-        </div>
-        <div class="field">
-          <label>制度導入目的</label>
-          <input id="purpose" type="text" placeholder="例：人材確保・定着、技能継承、戦力化" />
-        </div>
-        <div class="field">
-          <label>（補足）目的の詳細</label>
-          <input id="purposeDetail" type="text" placeholder="例：採用難のため、経験者の定着を強化したい" />
-        </div>
-        <div class="field">
-          <label> </label>
-          <button class="btn-sub" type="button" onclick="document.getElementById('makeReason')?.click()">理由文生成</button>
-        </div>
-      </div>
-
-      <div class="header-form" style="grid-template-columns: 1.2fr 1fr 1fr 1fr;">
-        <div class="field">
-          <label>就業規則 / 労働協約（労働者が確認できる客観的規定）</label>
-          <select id="hasObjectiveRules">
-            <option value="">（未選択）</option>
-            <option value="true">確認できる</option>
-            <option value="false">未確認 / 整備予定</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>正社員：賞与制度あり</label>
-          <select id="regularHasBonus">
-            <option value="">（未選択）</option>
-            <option value="true">あり</option>
-            <option value="false">なし</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>正社員：退職金制度あり</label>
-          <select id="regularHasRetirement">
-            <option value="">（未選択）</option>
-            <option value="true">あり</option>
-            <option value="false">なし</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>正社員：昇給制度あり</label>
-          <select id="regularHasRaise">
-            <option value="">（未選択）</option>
-            <option value="true">あり</option>
-            <option value="false">なし</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="header-form" style="grid-template-columns: 1fr 1.2fr 1fr 1fr;">
-        <div class="field">
-          <label>転換後に試用期間を設ける</label>
-          <select id="hasPostConversionProbation" name="probation_after_conversion">
-            <option value="">（未選択）</option>
-            <option value="なし">設けない</option>
-            <option value="あり">設ける</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>対象者：外国人区分</label>
-          <select id="foreignCategory">
-            <option value="">（未選択）</option>
-            <option value="jp_or_pr">日本人・永住者等</option>
-            <option value="trainee">外国人技能実習生</option>
-            <option value="epa_pre_pass">EPA受入れ人材（合格前）</option>
-            <option value="ssw_1">特定技能第1号</option>
-            <option value="other">その他</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>6か月分賃金の支払日（実際）</label>
-          <input id="sixMonthPayDate" type="date" />
-        </div>
-        <div class="field">
-          <label>支給申請期限（自動計算）</label>
-          <input id="applicationDeadline" type="text" placeholder="（自動表示）" readonly />
-        </div>
-      </div>
-
-      <section class="fatal-box" id="fatalIssueBox">
-        <h3>致命的不備フラグ</h3>
-        <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
-      </section>
-
-      <section class="risk-box">
-        <h3>注意点（制度チェック）</h3>
-        <div id="riskText">現時点で注意点は検出されていません</div>
-      </section>
-
-      <section class="memo-box">
-        <h3>進行メモ</h3>
-        <div id="memoText">入力内容に応じて進行メモが表示されます</div>
-      </section>
     </header>
 
     <main class="main">
       <section class="panel">
-        <div class="panel-head">
-          <h2>制度資料エリア</h2>
-          <p>支給要領、Q&A、申請様式を読み込ませる想定のエリアです。初号機ではアップロードUIのラフと参照一覧を実装しています。</p>
-        </div>
-        <div class="panel-body">
-          <div class="upload-box">
-            <strong>資料の読み込み</strong>
-            <div class="mini-actions">
-              <button class="chip" type="button">PDFアップロード</button>
-              <button class="chip" type="button">Wordアップロード</button>
-              <button class="chip" type="button">Q&amp;A追加</button>
-              <button class="chip" type="button">テキスト貼り付け</button>
+        <div class="form-grid">
+          <div class="field span-6">
+            <label for="grantName">助成金名</label>
+            <select id="grantName" name="grant_name">
+              <option>キャリアアップ助成金</option>
+            </select>
+          </div>
+          <div class="field span-6">
+            <label for="fiscalYear">年度</label>
+            <select id="fiscalYear" name="fiscal_year">
+              <option>2026年度</option>
+              <option>2025年度</option>
+            </select>
+          </div>
+
+          <div class="field span-6">
+            <label for="caseName">案件名</label>
+            <input id="caseName" name="case_name" placeholder="例：A社 正社員転換申請" />
+          </div>
+          <div class="field span-6">
+            <label for="companyName">顧客名</label>
+            <input id="companyName" name="company_name" placeholder="例：株式会社A商事" />
+          </div>
+          <div class="field span-4">
+            <label for="targetCount">対象人数</label>
+            <input id="targetCount" name="target_count" type="number" min="1" placeholder="例：1" />
+          </div>
+          <div class="field span-4">
+            <label for="plannedConversionDate">転換予定日</label>
+            <input id="plannedConversionDate" name="planned_conversion_date" type="date" />
+          </div>
+          <div class="field span-4">
+            <label for="employmentBefore">転換前雇用区分</label>
+            <select id="employmentBefore" name="employment_before">
+              <option value="">(未選択)</option>
+              <option value="有期">有期</option>
+              <option value="無期">無期</option>
+              <option value="派遣">派遣</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="employmentAfter">転換後雇用区分</label>
+            <select id="employmentAfter" name="employment_after">
+              <option value="">(未選択)</option>
+              <option value="正社員">正社員</option>
+              <option value="多様な正社員">多様な正社員</option>
+            </select>
+          </div>
+
+          <div class="field span-12">
+            <div class="inline-grid">
+              <div>
+                <label for="baseRaise">基本給増額予定額（円）</label>
+                <input id="baseRaise" name="base_raise" type="number" placeholder="例：20000" />
+              </div>
+              <div>
+                <label for="purposeIntro">制度導入目的</label>
+                <input id="purposeIntro" name="purpose_intro" placeholder="例：人材確保・定着" />
+              </div>
+              <div>
+                <label for="purposeDetail">（補足）目的の詳細</label>
+                <input id="purposeDetail" name="purpose_detail" placeholder="例：採用難のため、経験者の定着を強化" />
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <textarea id="reasonDraft" placeholder="判定・生成後に理由文ドラフトを表示"></textarea>
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <button class="secondary-btn" type="button" onclick="generateReason()">理由文生成</button>
+              </div>
             </div>
           </div>
 
-          <div class="doc-list">
-            <div class="doc-item">
-              <h3>支給要領（2026年度版）</h3>
-              <p>助成対象、支給要件、対象経費、申請スケジュールを確認する中核資料。</p>
-              <span class="status">読込済</span>
-            </div>
-            <div class="doc-item">
-              <h3>Q&amp;A集</h3>
-              <p>例外ケース、対象外経費、提出書類の補足説明を確認する想定。</p>
-              <span class="status">読込済</span>
-            </div>
-            <div class="doc-item">
-              <h3>申請様式一式</h3>
-              <p>申請理由欄、事業内容欄、添付資料欄の文案作成に参照する様式。</p>
-              <span class="status">未更新</span>
-            </div>
+          <div class="field span-4">
+            <label for="ruleObjective">就業規則／労働協約（労働者が確認できる客観的規定）</label>
+            <select id="ruleObjective" name="rule_objective">
+              <option value="">(未選択)</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
           </div>
-
-          <p class="footer-note">将来はここに、読み込んだ資料の要点抽出、ページ検索、要件ハイライト表示を追加します。</p>
+          <div class="field span-4">
+            <label for="regularHasBonus">正社員：賞与制度あり</label>
+            <select id="regularHasBonus" name="regular_has_bonus">
+              <option value="">(未選択)</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="regularHasRetirement">正社員：退職金制度あり</label>
+            <select id="regularHasRetirement" name="regular_has_retirement">
+              <option value="">(未選択)</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="regularHasRaise">正社員：昇給制度あり</label>
+            <select id="regularHasRaise" name="regular_has_raise">
+              <option value="">(未選択)</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="probationAfter">転換後に試用期間を設ける</label>
+            <select id="probationAfter" name="probation_after_conversion">
+              <option value="">(未選択)</option>
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="foreignCategory">対象者：外国人区分</label>
+            <select id="foreignCategory" name="foreign_category">
+              <option value="">(未選択)</option>
+              <option value="jp_or_pr">日本人・永住者等</option>
+              <option value="trainee">外国人技能実習生</option>
+              <option value="epa_pre_pass">EPA受入れ人材（合格前）</option>
+              <option value="ssw_1">特定技能第1号</option>
+              <option value="other">その他</option>
+            </select>
+          </div>
+          <div class="field span-4">
+            <label for="sixMonthPayDate">6か月分賃金の支払日（実際）</label>
+            <input id="sixMonthPayDate" name="six_month_pay_date" type="date" />
+          </div>
+          <div class="field span-4">
+            <label for="applicationDeadline">支給申請期限（自動計算）</label>
+            <input id="applicationDeadline" name="application_deadline" readonly placeholder="(自動表示)" />
+          </div>
         </div>
+
+        <section class="fatal-box" id="fatalIssueBox">
+          <h3>致命的不備フラグ</h3>
+          <div id="fatalIssueText">現時点で致命的不備は検出されていません。</div>
+        </section>
+
+        <section class="risk-box" id="warningBox">
+          <h3>注意点（制度チェック）</h3>
+          <div id="warningText">現時点で特記事項はありません。</div>
+        </section>
+
+        <section class="memo-box" id="memoBox">
+          <h3>進行メモ</h3>
+          <div id="memoText">進行メモはありません。</div>
+        </section>
       </section>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2>対話チャットエリア</h2>
-          <p>対象判定、追加確認事項、必要資料一覧、申請文案作成を対話で進めます。</p>
-        </div>
-        <div class="panel-body">
-          <div class="prompt-grid">
-            <button class="prompt-btn" onclick="applyPrompt('この会社が対象になるか整理してください。対象要件、未確認要件、懸念点に分けてください。')">対象になる？<span>対象・未確認・懸念点を整理</span></button>
-            <button class="prompt-btn" onclick="applyPrompt('不足している要件や確認事項を列挙してください。顧客に確認すべき事項も分けてください。')">不足要件は？<span>追加確認事項を一覧化</span></button>
-            <button class="prompt-btn" onclick="applyPrompt('必要資料を一覧にしてください。顧客提出分と事務所準備分に分けてください。')">必要資料一覧<span>不足資料タブ向けに整理</span></button>
-            <button class="prompt-btn" id="makeReason" type="button">申請理由作成<span>右欄の申請文案へ反映</span></button>
+      <section class="two-col">
+        <section class="panel">
+          <h3 class="card-title">制度改善提案</h3>
+          <div id="proposalBlock" class="result-block">
+            <h4>改善提案</h4>
+            <div id="proposalText" class="muted">診断後に制度改善提案を表示します。</div>
           </div>
-
-          <div id="chatWindow" class="chat-window">
-            <div class="message ai">こんにちは。助成金専用Cursor 初号機です。
-
-まずは、会社概要、現在の雇用状況、対象にしたい施策を入力してください。入力後、要件整理、不足資料、申請文案を右側に整理していきます。</div>
+          <div class="result-block">
+            <h4>次アクション</h4>
+            <div id="nextActionText" class="muted">診断後に次アクションを表示します。</div>
           </div>
+          <div class="footer-note">本ツールは申請可否を最終判断するものではありません。最終的には提出先の労働局・ハローワーク案内と最新様式に従ってください。</div>
+        </section>
 
-          <div class="composer">
-            <textarea id="chatInput" placeholder="例：従業員25名の小売業。パート2名を6か月後に正社員転換したい。就業規則改定は未対応。"></textarea>
-            <button class="btn" onclick="sendMessage()">送信</button>
+        <section class="panel">
+          <span class="pill">顧問先向け出力対応</span>
+          <h3 class="card-title">診断レポート概要</h3>
+          <div class="result-block">
+            <h4>総合判定</h4>
+            <div id="summaryRating" class="muted">未判定</div>
           </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h2>成果物エリア</h2>
-          <p>チャット結果を、実務で使う形に構造化して表示します。初号機ではデモ切り替えと静的整理を実装しています。</p>
-        </div>
-        <div class="panel-body">
-          <div class="tabs">
-            <button class="tab active" data-tab="requirements">要件整理</button>
-            <button class="tab" data-tab="documents">不足資料</button>
-            <button class="tab" data-tab="draft">申請文案</button>
-            <button class="tab" data-tab="risks">注意点</button>
-            <button class="tab" data-tab="memo">進行メモ</button>
+          <div class="result-block">
+            <h4>理由文ドラフト</h4>
+            <div id="reasonPreview" class="muted">理由文未生成</div>
           </div>
-
-          <div id="requirements" class="tab-pane active">
-            <div class="summary-box">
-              <h3>対象判定</h3>
-              <p id="reqJudge">現時点では対象判定前です。会社概要と実施予定内容を入力してください。</p>
-            </div>
-            <div class="summary-box">
-              <h3>確認済要件</h3>
-              <ul id="reqConfirmed">
-                <li>まだ整理されていません。</li>
-              </ul>
-            </div>
-            <div class="summary-box">
-              <h3>未確認要件</h3>
-              <ul id="reqPending">
-                <li>就業規則の整備状況</li>
-                <li>雇用契約書の整備状況</li>
-              </ul>
-            </div>
-          </div>
-
-          <div id="documents" class="tab-pane">
-            <div class="summary-box">
-              <h3>不足資料チェック（自動）</h3>
-              <p style="margin:0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.7;">
-                必要になりやすい資料をチェックし、未チェックを「不足の可能性」として表示します。
-              </p>
-              <div id="missingDocsChecklist" class="check-box"></div>
-            </div>
-            <div class="summary-box">
-              <h3>顧客に依頼する資料</h3>
-              <ul id="docClient">
-                <li>会社概要</li>
-                <li>対象者の雇用契約書</li>
-              </ul>
-            </div>
-            <div class="summary-box">
-              <h3>事務所内で準備する資料</h3>
-              <ul id="docOffice">
-                <li>申請様式の確認</li>
-                <li>就業規則改定案の確認</li>
-              </ul>
-            </div>
-          </div>
-
-          <div id="draft" class="tab-pane">
-            <div class="summary-box">
-              <h3>申請理由の下書き</h3>
-              <div id="draftText" class="result-box"></div>
-            </div>
-          </div>
-
-          <div id="risks" class="tab-pane">
-            <div class="warn-box" id="riskTextTab">対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。</div>
-          </div>
-
-          <div id="memo" class="tab-pane">
-            <div class="check-box">
-              <h3>進行メモ</h3>
-              <ul id="memoList">
-                <li>案件情報未入力</li>
-                <li>初回ヒアリング前</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        </section>
       </section>
     </main>
   </div>
 
   <script>
-    const tabs = document.querySelectorAll('.tab');
-    const panes = document.querySelectorAll('.tab-pane');
-    const chatWindow = document.getElementById('chatWindow');
-    const chatInput = document.getElementById('chatInput');
+    const $ = (id) => document.getElementById(id);
+    const STORAGE_KEY = 'joseikin-cursor-draft-v2';
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        panes.forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.tab).classList.add('active');
-      });
-    });
+    function value(id) { return ($(id)?.value || '').trim(); }
+    function selected(id) { return ($(id)?.value || '').trim(); }
 
-    function addMessage(text, role = 'ai') {
-      const div = document.createElement('div');
-      div.className = `message ${role}`;
-      div.textContent = text;
-      chatWindow.appendChild(div);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+    function addMonths(date, months) {
+      const d = new Date(date);
+      const day = d.getDate();
+      d.setMonth(d.getMonth() + months);
+      if (d.getDate() < day) d.setDate(0);
+      return d;
     }
 
-    function applyPrompt(text) {
-      chatInput.value = text;
-      chatInput.focus();
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
-    function sendMessage() {
-      const text = chatInput.value.trim();
-      if (!text) return;
-      addMessage(text, 'user');
-      chatInput.value = '';
-
-      const lower = text.toLowerCase();
-      let reply = '確認しました。右側の成果物エリアに整理しながら進めます。';
-
-      if (text.includes('対象') || text.includes('要件')) {
-        document.getElementById('reqJudge').textContent = '対象可能性あり。雇用区分、転換時期、就業規則整備状況、賃金差額の確認が必要です。';
-        document.getElementById('reqConfirmed').innerHTML = '<li>正社員転換を予定している</li><li>対象者が既存の有期雇用者である可能性が高い</li>';
-        document.getElementById('reqPending').innerHTML = '<li>転換前後の賃金規程差額</li><li>就業規則への規定整備</li><li>転換前6か月以上の雇用実績</li>';
-        reply = '対象判定のたたき台を作成しました。未確認要件として、就業規則、転換前後の賃金、雇用期間を確認してください。';
+    function calculateDeadline() {
+      const payDate = value('sixMonthPayDate');
+      if (!payDate) {
+        $('applicationDeadline').value = '';
+        return '';
       }
-
-      if (text.includes('資料')) {
-        document.getElementById('docClient').innerHTML = '<li>対象者の雇用契約書</li><li>出勤簿またはタイムカード</li><li>賃金台帳</li><li>会社概要資料</li>';
-        document.getElementById('docOffice').innerHTML = '<li>就業規則の該当条項確認</li><li>申請様式ドラフト作成</li><li>支給申請期限の確認</li>';
-        reply = '必要資料一覧を更新しました。顧客提出分と事務所準備分に分けています。';
-      }
-
-      if (text.includes('申請理由') || text.includes('文案')) {
-        const clientName = document.getElementById("clientName").value || "当社";
-        document.getElementById('draftText').innerText = generateReasonText({ company: clientName });
-        reply = '申請理由文を自動生成し、右欄（申請文案タブ）に反映しました。';
-      }
-
-      if (text.includes('注意') || text.includes('リスク')) {
-        document.getElementById('riskText').textContent = '就業規則の整備時期が転換前後で不整合になると支給対象外となる可能性があります。また、対象者の雇用区分、賃金差額、転換日、提出期限の管理漏れに注意してください。';
-        reply = '注意点を整理しました。特に就業規則整備時期と転換日、賃金差額の確認が重要です。';
-      }
-
-      updateMemo();
-      setTimeout(() => addMessage(reply, 'ai'), 260);
+      const nextDay = new Date(payDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const deadline = addMonths(nextDay, 2);
+      const out = formatDate(deadline);
+      $('applicationDeadline').value = out;
+      return out;
     }
 
-    function updateMemo() {
-      const project = document.getElementById('projectName').value || '案件名未入力';
-      const client = document.getElementById('clientName').value || '顧客名未入力';
-      const deadline = updateApplicationDeadlineUi();
-      const plannedConv = getInputValue("plannedConversionDate");
-      const sixPay = getInputValue("sixMonthPayDate");
-      const payDateCheck = (plannedConv && sixPay && isSixMonthPayDateTooEarly(plannedConv, sixPay)) ? "要確認" : "OK";
-      const progressMessages = [];
-      progressMessages.push(`案件：${project}`);
-      progressMessages.push(`顧客：${client}`);
-      progressMessages.push(`支給申請期限：${deadline || '未算定'}`);
-      progressMessages.push(`賃金支払日整合チェック：${payDateCheck}`);
-
-      const probationAfter = document.querySelector('[name="probation_after_conversion"]')?.value;
-      if (probationAfter === "あり") {
-        progressMessages.push("制度注意：転換後試用期間あり");
-      }
-
-      progressMessages.push("次アクション：未確認要件をヒアリングする");
-      progressMessages.push("状態：初期整理中");
-
-      const memoHtml = progressMessages.map(m => `<li>${m}</li>`).join("");
-
-      const memoList = document.getElementById('memoList');
-      if (memoList) memoList.innerHTML = memoHtml;
-
-      const memoText = document.getElementById('memoText');
-      if (memoText) {
-        memoText.innerHTML = `<ul style="margin:0; padding-left: 1.2em;">${memoHtml}</ul>`;
-      }
-    }
-
-    function loadDemo() {
-      document.getElementById('grantName').value = 'キャリアアップ助成金';
-      document.getElementById('fiscalYear').value = '2026年度';
-      document.getElementById('projectName').value = 'A社 正社員転換申請';
-      document.getElementById('clientName').value = '株式会社A商事';
-      document.getElementById('targetCount').value = 1;
-      document.getElementById('plannedConversionDate').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('employmentBefore').value = '有期雇用';
-      document.getElementById('employmentAfter').value = '正社員';
-      document.getElementById('plannedBasePayIncreaseYen').value = 20000;
-      document.getElementById('purpose').value = '人材確保・定着、戦力化';
-      document.getElementById('purposeDetail').value = '採用難のため、経験者の定着を強化したい';
-      document.getElementById('hasObjectiveRules').value = 'false';
-      document.getElementById('regularHasBonus').value = 'false';
-      document.getElementById('regularHasRetirement').value = 'false';
-      document.getElementById('regularHasRaise').value = 'true';
-      document.getElementById('hasPostConversionProbation').value = 'true';
-      document.getElementById('foreignCategory').value = 'jp_or_pr';
-      const pay6m = new Date();
-      pay6m.setMonth(pay6m.getMonth() + 6);
-      document.getElementById('sixMonthPayDate').value = pay6m.toISOString().slice(0, 10);
-      // 不足資料チェック（デモ）
-      const setChecked = (id, v) => {
-        const el = document.getElementById(id);
-        if (el) el.checked = v;
-      };
-      setChecked("doc_employment_contract", true);
-      setChecked("doc_working_conditions_notice", true);
-      setChecked("doc_work_rules_or_agreement_objective", false);
-      setChecked("doc_work_rules", false);
-      setChecked("doc_wage_rules", false);
-      setChecked("doc_conversion_rules", false);
-      setChecked("doc_attendance", false);
-      setChecked("doc_wage_ledger", false);
-      renderMissingDocsChecklist();
-      updateFatalIssues();
-      document.getElementById('reqJudge').textContent = '対象可能性あり。就業規則整備、転換前後賃金差額、雇用期間の確認が必要です。';
-      document.getElementById('reqConfirmed').innerHTML = '<li>有期雇用者を正社員転換予定</li><li>対象者が既に一定期間勤務している</li>';
-      document.getElementById('reqPending').innerHTML = '<li>就業規則改定の実施時期</li><li>転換後賃金が3%以上増額されているか</li><li>支給申請期限の確認</li>';
-      document.getElementById('docClient').innerHTML = '<li>雇用契約書</li><li>出勤簿</li><li>賃金台帳</li><li>会社概要</li>';
-      document.getElementById('docOffice').innerHTML = '<li>就業規則の該当条文確認</li><li>支給申請様式のドラフト</li><li>期限管理表の作成</li>';
-      document.getElementById('draftText').innerText = generateReasonText(collectReasonFormData());
-      updateRisksAuto();
-      updateMemo();
-      addMessage('デモ案件を読み込みました。右側に整理済みの内容を表示しています。', 'ai');
-    }
-
-    // --- 申請理由文 自動生成 ---
-    // 将来 `rules.md` の判定結果や `templates/reason.txt.txt` を反映できるよう、
-    // 生成ロジックは関数として独立させています。
-    function generateReasonText(data) {
-      const countText = data.targetCount ? `${data.targetCount}名` : "対象労働者";
-      const plannedDateText = data.plannedConversionDate ? `（転換予定日：${data.plannedConversionDate}）` : "";
-      const beforeText = data.employmentBefore ? `転換前雇用区分は「${data.employmentBefore}」であり、` : "";
-      const afterText = data.employmentAfter ? `転換後雇用区分は「${data.employmentAfter}」とします。` : "";
-      const basePayText =
-        data.plannedBasePayIncreaseYen !== null && data.plannedBasePayIncreaseYen !== undefined && data.plannedBasePayIncreaseYen !== ""
-          ? `基本給は賃金規程に基づき、${Number(data.plannedBasePayIncreaseYen).toLocaleString()}円の増額を予定しています。`
-          : "転換後は賃金規程に基づき基本給を増額し、処遇改善を図る予定です。";
-      const purposeText = data.purpose ? data.purpose : "人材確保および定着促進";
-      const purposeDetailText = data.purposeDetail ? `（補足：${data.purposeDetail}）` : "";
-
-      return `
-当社（${data.company || "当社"}）では、${purposeText}を目的として、
-非正規雇用労働者の正社員転換制度を整備しております。
-
-対象人数は${countText}です。${plannedDateText}
-${beforeText}${afterText}
-
-対象労働者は一定期間継続勤務しており、
-勤務状況および能力を踏まえ正社員としての活躍が期待されるため、
-正社員転換を実施する予定です。
-
-また、${basePayText}
-
-今後も評価制度の透明化および人材育成体制の強化を進め、
-安定した雇用環境の整備に取り組んでまいります。
-${purposeDetailText}
-`;
-    }
-
-    function collectReasonFormData() {
+    function collectData() {
       return {
-        company: document.querySelector("#clientName")?.value,
-        targetCount: document.querySelector("#targetCount")?.value,
-        plannedConversionDate: document.querySelector("#plannedConversionDate")?.value,
-        employmentBefore: document.querySelector("#employmentBefore")?.value,
-        employmentAfter: document.querySelector("#employmentAfter")?.value,
-        plannedBasePayIncreaseYen: document.querySelector("#plannedBasePayIncreaseYen")?.value,
-        purpose: document.querySelector("#purpose")?.value,
-        purposeDetail: document.querySelector("#purposeDetail")?.value
+        caseName: value('caseName'),
+        companyName: value('companyName'),
+        targetCount: value('targetCount'),
+        plannedConversionDate: value('plannedConversionDate'),
+        employmentBefore: selected('employmentBefore'),
+        employmentAfter: selected('employmentAfter'),
+        baseRaise: value('baseRaise'),
+        purposeIntro: value('purposeIntro'),
+        purposeDetail: value('purposeDetail'),
+        reasonDraft: value('reasonDraft'),
+        ruleObjective: selected('ruleObjective'),
+        regularHasBonus: selected('regularHasBonus'),
+        regularHasRetirement: selected('regularHasRetirement'),
+        regularHasRaise: selected('regularHasRaise'),
+        probationAfter: selected('probationAfter'),
+        foreignCategory: selected('foreignCategory'),
+        sixMonthPayDate: value('sixMonthPayDate'),
+        applicationDeadline: calculateDeadline()
       };
     }
 
-    // 「申請理由作成」ボタン押下時に実行
-    document.querySelector("#makeReason").onclick = () => {
-      const reason = generateReasonText(collectReasonFormData());
-
-      document.querySelector("#draftText").innerText = reason;
-    };
-
-    // --- 不足資料チェック（正社員化コース） ---
-    const MISSING_DOCS = [
-      { id: "doc_employment_contract", label: "雇用契約書" },
-      { id: "doc_work_rules_or_agreement_objective", label: "就業規則または労働協約（労働者が確認できる客観的規定）" },
-      { id: "doc_work_rules", label: "就業規則（写し）" },
-      { id: "doc_wage_rules", label: "賃金規程" },
-      { id: "doc_conversion_rules", label: "転換制度規程" },
-      { id: "doc_attendance", label: "出勤簿" },
-      { id: "doc_wage_ledger", label: "賃金台帳" },
-      { id: "doc_working_conditions_notice", label: "労働条件通知書" }
-    ];
-
-    function getDocChecked(id) {
-      if (id === "doc_work_rules_or_agreement_objective") {
-        const v = getTriStateBool("hasObjectiveRules");
-        if (v !== null) return v;
+    function renderList(targetId, items, emptyText) {
+      const target = $(targetId);
+      if (!items.length) {
+        target.textContent = emptyText;
+        return;
       }
-      const el = document.getElementById(id);
-      return el ? !!el.checked : false;
-    }
-
-    function getInputValue(id) {
-      const el = document.getElementById(id);
-      return el ? String(el.value ?? "").trim() : "";
-    }
-
-    function getTriStateBool(id) {
-      const v = getInputValue(id);
-      if (v === "true") return true;
-      if (v === "false") return false;
-      if (v === "あり") return true;
-      if (v === "なし") return false;
-      return null;
-    }
-
-    function parseIsoDate(dateStr) {
-      if (!dateStr) return null;
-      const d = new Date(dateStr);
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-
-    function addMonthsClamped(dateObj, months) {
-      const y = dateObj.getFullYear();
-      const m = dateObj.getMonth();
-      const d = dateObj.getDate();
-      const targetFirst = new Date(y, m + months, 1);
-      const lastDay = new Date(targetFirst.getFullYear(), targetFirst.getMonth() + 1, 0).getDate();
-      const day = Math.min(d, lastDay);
-      return new Date(targetFirst.getFullYear(), targetFirst.getMonth(), day);
-    }
-
-    function isSixMonthPayDateTooEarly(plannedConversionDateStr, sixMonthPayDateStr) {
-      // 簡易チェック：転換予定日 + 6か月 より前に「6か月分賃金の支払日」がある場合は不整合とみなす
-      const conv = parseIsoDate(plannedConversionDateStr);
-      const pay = parseIsoDate(sixMonthPayDateStr);
-      if (!conv || !pay) return false;
-      const threshold = addMonthsClamped(conv, 6);
-      return pay < threshold;
-    }
-
-    function computeApplicationDeadline(payDateStr) {
-      // 「賃金支払日の翌日から起算して2か月以内」→ 期限は (翌日 + 2か月) の前日
-      const pay = parseIsoDate(payDateStr);
-      if (!pay) return "";
-      const start = new Date(pay.getFullYear(), pay.getMonth(), pay.getDate() + 1); // 翌日
-      const twoMonthsLaterSameDay = addMonthsClamped(start, 2);
-      const end = new Date(twoMonthsLaterSameDay.getFullYear(), twoMonthsLaterSameDay.getMonth(), twoMonthsLaterSameDay.getDate() - 1);
-      const y = end.getFullYear();
-      const mm = String(end.getMonth() + 1).padStart(2, "0");
-      const dd = String(end.getDate()).padStart(2, "0");
-      return `${y}-${mm}-${dd}`;
-    }
-
-    function collectEligibilityData() {
-      const sixMonthPayDate = getInputValue("sixMonthPayDate");
-      return {
-        plannedConversionDate: getInputValue("plannedConversionDate"),
-        hasObjectiveRules: getTriStateBool("hasObjectiveRules"),
-        regularHasBonus: getTriStateBool("regularHasBonus"),
-        regularHasRetirement: getTriStateBool("regularHasRetirement"),
-        regularHasRaise: getTriStateBool("regularHasRaise"),
-        hasPostConversionProbation: getTriStateBool("hasPostConversionProbation"),
-        foreignCategory: getInputValue("foreignCategory"),
-        sixMonthPayDate,
-        applicationDeadline: computeApplicationDeadline(sixMonthPayDate)
-      };
-    }
-
-    function updateApplicationDeadlineUi() {
-      const deadline = computeApplicationDeadline(getInputValue("sixMonthPayDate"));
-      const el = document.getElementById("applicationDeadline");
-      if (el) el.value = deadline;
-      return deadline;
-    }
-
-    function updateRisksAuto() {
-      const e = collectEligibilityData();
-      const warningMessages = [];
-
-      // 制度注意：転換後に試用期間を設ける
-      // name属性が不明な場合もあるため、name=probation_after_conversion を優先して取得
-      const probationAfter = document.querySelector('[name="probation_after_conversion"]')?.value;
-      if (probationAfter === "あり") {
-        warningMessages.push(
-          "転換後に試用期間が設定されています。助成金審査上、制度運用の説明が求められる可能性があります。"
-        );
-      }
-
-      // 正社員定義（(賞与 or 退職金) and 昇給）
-      if (e.regularHasBonus !== null && e.regularHasRetirement !== null && e.regularHasRaise !== null) {
-        const hasBonusOrRetirement = e.regularHasBonus === true || e.regularHasRetirement === true;
-        const hasRaise = e.regularHasRaise === true;
-        if (!(hasBonusOrRetirement && hasRaise)) {
-          warningMessages.push("正社員定義要件を再確認してください（賞与/退職金/昇給）。");
-        }
-      }
-
-      // 外国人区分（未選択は注意、対象外類型は注意）
-      if (!e.foreignCategory) {
-        warningMessages.push("対象者の在留資格・外国人区分を確認してください。");
-      } else if (["trainee", "epa_pre_pass", "ssw_1"].includes(e.foreignCategory)) {
-        warningMessages.push("外国人区分が対象外類型に該当する可能性があります。");
-      }
-
-      // 転換予定日 × 6か月賃金支払日の整合（簡易）
-      const plannedConv = getInputValue("plannedConversionDate");
-      const sixPay = getInputValue("sixMonthPayDate");
-      if (plannedConv && sixPay && isSixMonthPayDateTooEarly(plannedConv, sixPay)) {
-        warningMessages.push("転換予定日と6か月分賃金支払日の整合を確認してください。");
-      }
-
-      if (!e.sixMonthPayDate) {
-        warningMessages.push("申請期限：未算定");
-      } else {
-        warningMessages.push(`申請期限：${e.applicationDeadline}`);
-      }
-
-      const text = warningMessages.length === 0 ? "現時点で注意点は検出されていません" : warningMessages.join("\n");
-
-      const riskEl = document.getElementById("riskText");
-      if (riskEl) riskEl.textContent = text;
-
-      // 既存の「注意点タブ」も維持
-      const riskTabEl = document.getElementById("riskTextTab");
-      if (riskTabEl) riskTabEl.textContent = warningMessages.length === 0
-        ? "対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。"
-        : warningMessages.join("\n");
+      target.innerHTML = `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
     }
 
     function updateFatalIssues() {
-      const issues = [];
+      const d = collectData();
+      const fatal = [];
 
-      const plannedConversionDate = getInputValue("plannedConversionDate");
-      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
-      const employmentBefore = getInputValue("employmentBefore");
-      const employmentAfter = getInputValue("employmentAfter");
-      const eligibility = collectEligibilityData();
+      if ((d.foreignCategory === 'trainee')) fatal.push('外国人技能実習生は正社員化コースの対象外です。');
+      if ((d.foreignCategory === 'epa_pre_pass')) fatal.push('EPA受入れ人材（合格前）は正社員化コースの対象外です。');
+      if ((d.foreignCategory === 'ssw_1')) fatal.push('特定技能第1号は正社員化コースの対象外です。');
 
-      // 転換予定日 × 6か月賃金支払日の整合（簡易）
-      // 片方未入力のときは致命的不備にしない（未入力ルールを優先）
-      if (plannedConversionDate && eligibility.sixMonthPayDate && isSixMonthPayDateTooEarly(plannedConversionDate, eligibility.sixMonthPayDate)) {
-        issues.push("6か月分賃金の支払日が早すぎます。転換後6か月分の賃金支払い実績を確認してください。");
-      }
+      if (d.ruleObjective !== 'あり') fatal.push('就業規則等の客観的な規定が未確認です。助成金上の制度根拠不足となる可能性があります。');
 
-      // 外国人区分（対象外）
-      // ※未選択は致命的不備にしない（注意点タブで促す）
-      if (eligibility.foreignCategory === "trainee") {
-        issues.push("外国人技能実習生は正社員化コースの対象外です。");
-      }
-      if (eligibility.foreignCategory === "epa_pre_pass") {
-        issues.push("EPA受入れ人材（合格前）は正社員化コースの対象外です。");
-      }
-      if (eligibility.foreignCategory === "ssw_1") {
-        issues.push("特定技能第1号は正社員化コースの対象外です。");
-      }
-
-      // 正社員定義（(賞与あり OR 退職金あり) AND 昇給あり）
-      // - 未選択があれば「確認未完了」
-      // - 選択済みで要件未達なら「満たしていない」
-      if (
-        eligibility.regularHasBonus === null ||
-        eligibility.regularHasRetirement === null ||
-        eligibility.regularHasRaise === null
-      ) {
-        issues.push("正社員定義の確認が未完了です。");
+      const bonusKnown = !!d.regularHasBonus;
+      const retireKnown = !!d.regularHasRetirement;
+      const raiseKnown = !!d.regularHasRaise;
+      if (!bonusKnown || !retireKnown || !raiseKnown) {
+        fatal.push('正社員定義の確認が未完了です。');
       } else {
-        const hasBonusOrRetirement =
-          eligibility.regularHasBonus === true || eligibility.regularHasRetirement === true;
-        const hasRaise = eligibility.regularHasRaise === true;
-        if ((!hasBonusOrRetirement) || (!hasRaise)) {
-          issues.push("正社員定義（賞与または退職金＋昇給）を満たしていません。");
+        const ok = (d.regularHasBonus === 'あり' || d.regularHasRetirement === 'あり') && d.regularHasRaise === 'あり';
+        if (!ok) fatal.push('正社員定義（賞与または退職金＋昇給）を満たしていません。');
+      }
+
+      if (!d.employmentBefore || !d.employmentAfter) fatal.push('転換前後の雇用区分が未入力です。要件判定ができません。');
+      if (!d.sixMonthPayDate) fatal.push('6か月分賃金の支払日（実際）が未入力です。支給申請期限を算定できません。');
+
+      if (d.plannedConversionDate && d.sixMonthPayDate) {
+        const planned = new Date(d.plannedConversionDate);
+        const limit = addMonths(planned, 6);
+        const pay = new Date(d.sixMonthPayDate);
+        if (pay < limit) {
+          fatal.unshift('6か月分賃金の支払日が早すぎます。転換後6か月分の賃金支払い実績を確認してください。');
         }
       }
 
-      // ルール1: 転換制度規程が未チェック
-      if (!getDocChecked("doc_conversion_rules")) {
-        issues.push("転換制度規程が未確認です。制度の根拠が確認できないため、申請不可の可能性があります。");
-      }
-
-      // ルール2: 就業規則等（客観的規定）が未確認（未選択/未確認）で、転換予定日が入力済み または 未選択
-      // ※ 初期表示時（未選択）でも検出して、早期に差戻しリスクを可視化する。
-      if (eligibility.hasObjectiveRules !== true && (plannedConversionDate || eligibility.hasObjectiveRules === null)) {
-        issues.push("就業規則等の客観的な規定が未確認です。助成金上の制度根拠不足となる可能性があります。");
-      }
-
-      // ルール3: 基本給増額予定額が入力されているのに賃金規程が未チェック
-      if (plannedBasePayIncreaseYen && !getDocChecked("doc_wage_rules")) {
-        issues.push("基本給増額予定額は入力済みですが、賃金規程が未確認です。増額根拠を説明できない可能性があります。");
-      }
-
-      // ルール4: 転換前/後雇用区分が未入力
-      if (!employmentBefore || !employmentAfter) {
-        issues.push("転換前後の雇用区分が未入力です。要件判定ができません。");
-      }
-
-      // ルール7: 6か月分賃金の支払日（実際）が未入力
-      if (!eligibility.sixMonthPayDate) {
-        issues.push("6か月分賃金の支払日（実際）が未入力です。支給申請期限を算定できません。");
-      }
-
-      const box = document.getElementById("fatalIssueBox");
-      const text = document.getElementById("fatalIssueText");
-      if (!box || !text) return;
-
-      if (issues.length === 0) {
-        text.innerText = "現時点で致命的不備は検出されていません";
-        return;
-      }
-
-      text.innerHTML = `<ul style="margin:0; padding-left: 1.2em;">${issues.map(i => `<li>${i}</li>`).join("")}</ul>`;
+      renderList('fatalIssueText', fatal, '現時点で致命的不備は検出されていません。');
+      return fatal;
     }
 
-    function getMissingDocPriority(docId) {
-      // 未チェック前提で優先度を算定（高いほど先頭）
-      // 例：
-      // - 転換制度規程が未チェックなら最優先
-      // - 転換予定日が入力されているのに「客観的規定」が未チェックなら高
-      // - 基本給増額予定額が入力されているのに賃金規程が未チェックなら高
-      const plannedConversionDate = getInputValue("plannedConversionDate");
-      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
+    function updateWarnings() {
+      const d = collectData();
+      const warnings = [];
 
-      if (docId === "doc_conversion_rules") return 300;
+      if (!d.foreignCategory) warnings.push('対象者の在留資格・外国人区分を確認してください。');
+      if (d.probationAfter === 'あり') warnings.push('転換後に試用期間が設定されています。助成金審査上、制度運用の説明が求められる可能性があります。');
+      if (d.applicationDeadline) warnings.push(`申請期限：${d.applicationDeadline}`);
+      else warnings.push('申請期限：未算定');
 
-      if (docId === "doc_work_rules_or_agreement_objective") {
-        return plannedConversionDate ? 240 : 140;
+      const allText = updateFatalIssues().join(' ');
+      if (allText.includes('正社員定義')) warnings.push('正社員定義要件を再確認してください（賞与/退職金/昇給）。');
+      if (allText.includes('6か月分賃金の支払日が早すぎます')) warnings.push('転換予定日と6か月分賃金支払日の整合を確認してください。');
+      if (d.foreignCategory === 'trainee' || d.foreignCategory === 'epa_pre_pass' || d.foreignCategory === 'ssw_1') {
+        warnings.push('外国人区分が対象外類型に該当する可能性があります。');
       }
 
-      if (docId === "doc_work_rules") {
-        return plannedConversionDate ? 220 : 120;
-      }
-
-      if (docId === "doc_wage_rules") {
-        return plannedBasePayIncreaseYen ? 210 : 110;
-      }
-
-      // その他は中〜低（案件の進行に応じて増やせる）
-      return 100;
+      renderList('warningText', warnings, '現時点で特記事項はありません。');
+      return warnings;
     }
 
-    function getMissingDocReasons(docId) {
-      const plannedConversionDate = getInputValue("plannedConversionDate");
-      const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
+    function updateMemo() {
+      const d = collectData();
+      const memo = [];
+      memo.push(`案件：${d.caseName || '案件名未入力'}`);
+      memo.push(`顧客：${d.companyName || '顧客名未入力'}`);
+      memo.push(`支給申請期限：${d.applicationDeadline || '未算定'}`);
+      memo.push(`賃金支払日整合チェック：${(() => {
+        if (!d.plannedConversionDate || !d.sixMonthPayDate) return '未判定';
+        const planned = addMonths(new Date(d.plannedConversionDate), 6);
+        const pay = new Date(d.sixMonthPayDate);
+        return pay < planned ? '要確認' : 'OK';
+      })()}`);
+      if (d.probationAfter === 'あり') memo.push('制度注意：転換後試用期間あり');
+      memo.push(`状態：${updateFatalIssues()[0]?.includes('検出されていません') ? '整理済' : '初期整理中'}`);
+      renderList('memoText', memo, '進行メモはありません。');
+      return memo;
+    }
+
+    function updateProposalAndActions() {
+      const fatalText = updateFatalIssues().join(' ');
+      const warnings = updateWarnings().join(' ');
+      const proposals = [];
+
+      if (fatalText.includes('就業規則')) proposals.push('就業規則または労働協約に、転換制度および正社員定義を明記してください。');
+      if (fatalText.includes('正社員定義')) proposals.push('正社員区分における賞与・退職金・昇給の適用関係を整理してください。');
+      if (fatalText.includes('外国人') || warnings.includes('外国人区分')) proposals.push('対象者の在留資格区分を確認し、対象外類型に該当しないことを事前確認してください。');
+      if (warnings.includes('申請期限') || value('applicationDeadline')) proposals.push('6か月分賃金支払日を基準に、支給申請期限を逆算管理してください。');
+      if (warnings.includes('試用期間')) proposals.push('転換後の試用期間設定の有無と制度運用説明資料を整理してください。');
+      if (!proposals.length) proposals.push('現時点では大きな制度改善提案はありません。提出前の最終確認を推奨します。');
+
+      const actions = [
+        '不足資料の収集',
+        '制度要件・対象者区分の確認',
+        '就業規則・規程の整備確認',
+        '申請スケジュールの確定',
+        '必要に応じて制度整備支援・申請支援へ移行'
+      ];
+
+      $('proposalText').innerHTML = `<ul>${proposals.map(p => `<li>${p}</li>`).join('')}</ul>`;
+      $('nextActionText').innerHTML = `<ol>${actions.map(a => `<li>${a}</li>`).join('')}</ol>`;
+
+      const hasFatal = !($('fatalIssueText').textContent.includes('検出されていません'));
+      const hasWarning = !($('warningText').textContent.includes('特記事項はありません'));
+      let rating = 'A：申請準備を進められる状態';
+      if (hasFatal) rating = 'C：現状では申請困難';
+      else if (hasWarning) rating = 'B：制度整備・確認後に申請可能性あり';
+      $('summaryRating').textContent = rating;
+    }
+
+    function generateReason() {
+      const d = collectData();
       const reasons = [];
-
-      if (docId === "doc_conversion_rules") {
-        reasons.push("転換制度規程が未確認だと、支給要件（制度の客観性）の説明が組み立てにくいです。");
-      }
-      if (docId === "doc_work_rules_or_agreement_objective" && plannedConversionDate) {
-        reasons.push("転換予定日が入力されています（転換の実施が具体化）→ 助成金上『労働者が確認できる客観的な規定』の整備確認が最優先です（10人未満でも必要）。");
-      }
-      if (docId === "doc_work_rules" && plannedConversionDate) {
-        reasons.push("転換予定日が入力されています（転換の実施が具体化）→ 就業規則の整備・周知・整合確認が優先です。");
-      }
-      if (docId === "doc_wage_rules" && plannedBasePayIncreaseYen) {
-        reasons.push("基本給増額予定額が入力されています → 賃金規程（算定根拠）の確認が優先です。");
-      }
-      return reasons;
+      if (d.purposeIntro) reasons.push(d.purposeIntro);
+      if (d.purposeDetail) reasons.push(d.purposeDetail);
+      if (d.baseRaise) reasons.push(`基本給を${d.baseRaise}円増額予定`);
+      if (d.employmentBefore && d.employmentAfter) reasons.push(`${d.employmentBefore}から${d.employmentAfter}へ転換予定`);
+      if (!reasons.length) reasons.push('制度導入目的と転換内容の整理が必要です。');
+      const draft = `本件は、${reasons.join('、')}ため、キャリアアップ助成金（正社員化コース）の活用を検討するものです。`; 
+      $('reasonDraft').value = draft;
+      $('reasonPreview').textContent = draft;
+      saveDraft();
     }
-
-    function renderMissingDocsChecklist() {
-      const box = document.getElementById("missingDocsChecklist");
-      if (!box) return;
-
-      // 期限（自動計算）と注意点も入力連動で更新
-      updateApplicationDeadlineUi();
-      updateRisksAuto();
-      updateMemo();
-
-      // チェック/入力に連動した致命的不備表示も更新
-      updateFatalIssues();
-
-      const docsWithMeta = MISSING_DOCS.map((d) => {
-        const checked = getDocChecked(d.id);
-        const priority = checked ? -1 : getMissingDocPriority(d.id);
-        const reasons = checked ? [] : getMissingDocReasons(d.id);
-        return { ...d, checked, priority, reasons };
-      });
-
-      // 未確認（未チェック）を優先度順に上、確認済は下
-      docsWithMeta.sort((a, b) => {
-        if (a.checked !== b.checked) return a.checked ? 1 : -1;
-        return b.priority - a.priority;
-      });
-
-      box.innerHTML = docsWithMeta.map((d) => {
-        const badgeStyle = d.checked
-          ? "background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;"
-          : d.priority >= 300
-            ? "background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"
-            : d.priority >= 210
-              ? "background:#fff7ed;color:#92400e;border:1px solid #fed7aa;"
-              : "background:#eef2f7;color:#111827;border:1px solid #d9e2ec;";
-
-        const badgeText = d.checked
-          ? "確認済"
-          : d.priority >= 300
-            ? "最優先"
-            : d.priority >= 210
-              ? "優先"
-              : "不足の可能性";
-
-        const reasonsHtml = d.reasons && d.reasons.length
-          ? `<div style="margin-top:6px; font-size:12px; color:#92400e; line-height:1.6;">
-               ${d.reasons.map(r => `- ${r}`).join("<br/>")}
-             </div>`
-          : `<div style="margin-top:6px; font-size:12px; color: var(--muted); line-height:1.6;">未確認の場合は早めの回収・整備を推奨します。</div>`;
-
-        return `
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff; margin-bottom:8px;">
-            <label style="display:flex; gap:10px; cursor:pointer; margin:0; flex: 1;">
-              <input type="checkbox" id="${d.id}" ${d.checked ? "checked" : ""} />
-              <div>
-                <div style="font-weight:700; font-size:14px;">${d.label}</div>
-                ${reasonsHtml}
-              </div>
-            </label>
-            <span style="display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; ${badgeStyle}">${badgeText}</span>
-          </div>
-        `;
-      }).join("");
-
-      // innerHTMLで作り直すためイベントも付け直す
-      for (const d of MISSING_DOCS) {
-        const el = document.getElementById(d.id);
-        if (el) el.onchange = () => renderMissingDocsChecklist();
-      }
-    }
-
-    // 初回描画
-    renderMissingDocsChecklist();
-
-    // 入力内容との連動（例：転換予定日・基本給増額予定額の入力で優先度が変わる）
-    [
-      "plannedConversionDate",
-      "plannedBasePayIncreaseYen",
-      "employmentBefore",
-      "employmentAfter",
-      "hasObjectiveRules",
-      "regularHasBonus",
-      "regularHasRetirement",
-      "regularHasRaise",
-      "hasPostConversionProbation",
-      "foreignCategory",
-      "sixMonthPayDate"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener("input", () => renderMissingDocsChecklist());
-    });
 
     function saveDraft() {
-      const data = {
-        grantName: document.getElementById('grantName').value,
-        fiscalYear: document.getElementById('fiscalYear').value,
-        projectName: document.getElementById('projectName').value,
-        clientName: document.getElementById('clientName').value,
-        targetCount: document.getElementById('targetCount')?.value,
-        plannedConversionDate: document.getElementById('plannedConversionDate')?.value,
-        employmentBefore: document.getElementById('employmentBefore')?.value,
-        employmentAfter: document.getElementById('employmentAfter')?.value,
-        plannedBasePayIncreaseYen: document.getElementById('plannedBasePayIncreaseYen')?.value,
-        purpose: document.getElementById('purpose')?.value,
-        purposeDetail: document.getElementById('purposeDetail')?.value,
-        hasObjectiveRules: document.getElementById('hasObjectiveRules')?.value,
-        regularHasBonus: document.getElementById('regularHasBonus')?.value,
-        regularHasRetirement: document.getElementById('regularHasRetirement')?.value,
-        regularHasRaise: document.getElementById('regularHasRaise')?.value,
-        hasPostConversionProbation: document.getElementById('hasPostConversionProbation')?.value,
-        foreignCategory: document.getElementById('foreignCategory')?.value,
-        sixMonthPayDate: document.getElementById('sixMonthPayDate')?.value,
-        doc_employment_contract: getDocChecked("doc_employment_contract"),
-        doc_work_rules_or_agreement_objective: getDocChecked("doc_work_rules_or_agreement_objective"),
-        doc_work_rules: getDocChecked("doc_work_rules"),
-        doc_wage_rules: getDocChecked("doc_wage_rules"),
-        doc_conversion_rules: getDocChecked("doc_conversion_rules"),
-        doc_attendance: getDocChecked("doc_attendance"),
-        doc_wage_ledger: getDocChecked("doc_wage_ledger"),
-        doc_working_conditions_notice: getDocChecked("doc_working_conditions_notice"),
-        lastUpdated: new Date().toLocaleString('ja-JP')
-      };
-      localStorage.setItem('joseikinCursorDraft', JSON.stringify(data));
-      addMessage(`下書きを保存しました。\n助成金：${data.grantName}\n案件：${data.projectName || '未入力'}\n更新：${data.lastUpdated}`, 'ai');
+      const fields = ['grantName','fiscalYear','caseName','companyName','targetCount','plannedConversionDate','employmentBefore','employmentAfter','baseRaise','purposeIntro','purposeDetail','reasonDraft','ruleObjective','regularHasBonus','regularHasRetirement','regularHasRaise','probationAfter','foreignCategory','sixMonthPayDate'];
+      const data = Object.fromEntries(fields.map(id => [id, $(id)?.value || '']));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      refreshAll();
+      alert('保存しました');
     }
 
-    (function restoreDraft() {
-      const raw = localStorage.getItem('joseikinCursorDraft');
+    function restoreDraft() {
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      try {
-        const data = JSON.parse(raw);
-        if (data.grantName) document.getElementById('grantName').value = data.grantName;
-        if (data.fiscalYear) document.getElementById('fiscalYear').value = data.fiscalYear;
-        if (data.projectName) document.getElementById('projectName').value = data.projectName;
-        if (data.clientName) document.getElementById('clientName').value = data.clientName;
-        if (data.targetCount) document.getElementById('targetCount').value = data.targetCount;
-        if (data.plannedConversionDate) document.getElementById('plannedConversionDate').value = data.plannedConversionDate;
-        if (data.employmentBefore) document.getElementById('employmentBefore').value = data.employmentBefore;
-        if (data.employmentAfter) document.getElementById('employmentAfter').value = data.employmentAfter;
-        if (data.plannedBasePayIncreaseYen) document.getElementById('plannedBasePayIncreaseYen').value = data.plannedBasePayIncreaseYen;
-        if (data.purpose) document.getElementById('purpose').value = data.purpose;
-        if (data.purposeDetail) document.getElementById('purposeDetail').value = data.purposeDetail;
-        if (data.hasObjectiveRules) document.getElementById('hasObjectiveRules').value = data.hasObjectiveRules;
-        if (data.regularHasBonus) document.getElementById('regularHasBonus').value = data.regularHasBonus;
-        if (data.regularHasRetirement) document.getElementById('regularHasRetirement').value = data.regularHasRetirement;
-        if (data.regularHasRaise) document.getElementById('regularHasRaise').value = data.regularHasRaise;
-        if (data.hasPostConversionProbation) document.getElementById('hasPostConversionProbation').value = data.hasPostConversionProbation;
-        if (data.foreignCategory) document.getElementById('foreignCategory').value = data.foreignCategory;
-        if (data.sixMonthPayDate) document.getElementById('sixMonthPayDate').value = data.sixMonthPayDate;
-        const restoreChecked = (id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          if (data[id] === true || data[id] === false) el.checked = data[id];
-        };
-        restoreChecked("doc_employment_contract");
-        restoreChecked("doc_work_rules_or_agreement_objective");
-        restoreChecked("doc_work_rules");
-        restoreChecked("doc_wage_rules");
-        restoreChecked("doc_conversion_rules");
-        restoreChecked("doc_attendance");
-        restoreChecked("doc_wage_ledger");
-        restoreChecked("doc_working_conditions_notice");
-        renderMissingDocsChecklist();
-        updateFatalIssues();
-        updateMemo();
-      } catch (e) {}
-    })();
+      const data = JSON.parse(raw);
+      Object.entries(data).forEach(([id, val]) => { if ($(id)) $(id).value = val; });
+    }
 
-    // 初期表示時の同期（DOMContentLoaded前後どちらでも必ず実行）
-    function runInitialSync() {
-      updateApplicationDeadlineUi();
-      updateRisksAuto();
-      updateMemo();
+    function loadDemo() {
+      const demo = {
+        caseName: 'A社 正社員転換申請',
+        companyName: '株式会社A商事',
+        targetCount: '1',
+        plannedConversionDate: '2026-04-10',
+        employmentBefore: '有期',
+        employmentAfter: '正社員',
+        baseRaise: '20000',
+        purposeIntro: '人材確保・定着',
+        purposeDetail: '採用難のため、経験者の定着を強化',
+        ruleObjective: 'なし',
+        regularHasBonus: 'なし',
+        regularHasRetirement: 'なし',
+        regularHasRaise: 'なし',
+        probationAfter: 'あり',
+        foreignCategory: 'trainee',
+        sixMonthPayDate: '2026-07-10'
+      };
+      Object.entries(demo).forEach(([id, val]) => { if ($(id)) $(id).value = val; });
+      generateReason();
+      refreshAll();
+    }
+
+    function refreshAll() {
+      calculateDeadline();
       updateFatalIssues();
-      renderMissingDocsChecklist();
+      updateWarnings();
+      updateMemo();
+      updateProposalAndActions();
     }
 
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => {
-        // restoreDraft() / updateMemo() / updateRisksAuto() の後に最終同期しても問題ない設計
-        runInitialSync();
-      });
-    } else {
-      runInitialSync();
+    async function exportDiagnosticPdf() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const d = collectData();
+
+      const getListItems = (id, emptyText) => {
+        const node = $(id);
+        const li = [...node.querySelectorAll('li')].map(el => el.textContent.trim()).filter(Boolean);
+        return li.length ? li : [emptyText];
+      };
+
+      const fatalLines = getListItems('fatalIssueText', '現時点で致命的不備は検出されていません。');
+      const warningLines = getListItems('warningText', '現時点で特記事項はありません。');
+      const memoLines = getListItems('memoText', '進行メモはありません。');
+      const proposalLines = [...$('proposalText').querySelectorAll('li')].map(el => el.textContent.trim()).filter(Boolean);
+      const actionLines = [...$('nextActionText').querySelectorAll('li')].map(el => el.textContent.trim()).filter(Boolean);
+
+      let y = 18;
+      const left = 15;
+      const width = 180;
+
+      const addTitle = (text) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(text, left, y);
+        y += 8;
+      };
+      const addSubTitle = (text) => {
+        if (y > 270) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(text, left, y);
+        y += 6;
+      };
+      const addParagraph = (text) => {
+        if (y > 270) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(text, width);
+        doc.text(lines, left, y);
+        y += lines.length * 5 + 2;
+      };
+      const addList = (items) => {
+        items.forEach(item => {
+          if (y > 270) { doc.addPage(); y = 18; }
+          const lines = doc.splitTextToSize('・' + item, width);
+          doc.text(lines, left, y);
+          y += lines.length * 5 + 1;
+        });
+        y += 2;
+      };
+      const addRow = (label, value) => {
+        if (y > 270) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, left, y);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(String(value || '未入力'), 120);
+        doc.text(lines, left + 45, y);
+        y += Math.max(lines.length * 5, 6);
+      };
+
+      addTitle('キャリアアップ助成金 事前適合診断レポート');
+      addParagraph(`作成日：${formatDate(new Date())}`);
+
+      addSubTitle('1. 基本情報');
+      addRow('案件名', d.caseName || '未入力');
+      addRow('顧客名', d.companyName || '未入力');
+      addRow('対象人数', d.targetCount || '未入力');
+      addRow('転換予定日', d.plannedConversionDate || '未入力');
+      addRow('転換前雇用区分', d.employmentBefore || '未入力');
+      addRow('転換後雇用区分', d.employmentAfter || '未入力');
+      addRow('6か月分賃金支払日', d.sixMonthPayDate || '未入力');
+      addRow('支給申請期限', d.applicationDeadline || '未算定');
+
+      addSubTitle('2. 総合判定');
+      addParagraph($('summaryRating').textContent || '未判定');
+
+      addSubTitle('3. 致命的不備');
+      addList(fatalLines);
+
+      addSubTitle('4. 注意点');
+      addList(warningLines);
+
+      addSubTitle('5. 制度改善提案');
+      addList(proposalLines.length ? proposalLines : ['提案なし']);
+
+      addSubTitle('6. 次アクション');
+      addList(actionLines.length ? actionLines : ['次アクションなし']);
+
+      addSubTitle('7. 進行メモ');
+      addList(memoLines);
+
+      addParagraph('本診断は申請可否の最終判断を確定するものではなく、事前整理を目的としたものです。制度整備、規程修正、申請支援が必要な場合は別途ご相談ください。');
+
+      doc.save('キャリアアップ助成金_事前適合診断レポート.pdf');
     }
+
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+      el.addEventListener('change', refreshAll);
+      el.addEventListener('input', refreshAll);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      restoreDraft();
+      refreshAll();
+    });
   </script>
 </body>
 </html>
