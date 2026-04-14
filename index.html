@@ -404,19 +404,21 @@
     }
 
     .fatal-box {
-      background: #fef2f2; /* 薄い赤 */
-      border: 1px solid #fecaca;
-      color: #991b1b;
-      border-radius: 14px;
-      padding: 14px;
-      line-height: 1.8;
-      font-size: 14px;
+      margin: 16px 0;
+      padding: 16px;
+      border: 1px solid #e59a9a;
+      background: #fff1f1;
+      color: #8b1e1e;
+      border-radius: 12px;
     }
 
-    .fatal-box strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
+    .fatal-box h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    #fatalIssueText ul {
+      margin: 8px 0 0 20px;
     }
 
     .footer-note {
@@ -604,6 +606,11 @@
       </div>
     </header>
 
+    <section class="fatal-box" id="fatalIssueBox">
+      <h3>致命的不備フラグ</h3>
+      <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
+    </section>
+
     <main class="main">
       <section class="panel">
         <div class="panel-head">
@@ -709,10 +716,6 @@
               <p style="margin:0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.7;">
                 必要になりやすい資料をチェックし、未チェックを「不足の可能性」として表示します。
               </p>
-              <div id="fatalIssueBox" class="fatal-box" style="margin-bottom: 12px;">
-                <strong>致命的不備フラグ</strong>
-                <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
-              </div>
               <div id="missingDocsChecklist" class="check-box"></div>
             </div>
             <div class="summary-box">
@@ -1058,8 +1061,9 @@ ${purposeDetailText}
         issues.push("転換制度規程が未確認です。制度の根拠が確認できないため、申請不可の可能性があります。");
       }
 
-      // ルール2: 就業規則等（客観的規定）が未確認で、転換予定日が入力済み
-      if (plannedConversionDate && eligibility.hasObjectiveRules !== true) {
+      // ルール2: 就業規則等（客観的規定）が未確認（未選択/未確認）で、転換予定日が入力済み または 未選択
+      // ※ 初期表示時（未選択）でも検出して、早期に差戻しリスクを可視化する。
+      if (eligibility.hasObjectiveRules !== true && (plannedConversionDate || eligibility.hasObjectiveRules === null)) {
         issues.push("就業規則等の客観的な規定が未確認です。助成金上の制度根拠不足となる可能性があります。");
       }
 
@@ -1321,6 +1325,24 @@ ${purposeDetailText}
         updateMemo();
       } catch (e) {}
     })();
+
+    // 初期表示時の同期（DOMContentLoaded前後どちらでも必ず実行）
+    function runInitialSync() {
+      updateApplicationDeadlineUi();
+      updateRisksAuto();
+      updateMemo();
+      updateFatalIssues();
+      renderMissingDocsChecklist();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        // restoreDraft() / updateMemo() / updateRisksAuto() の後に最終同期しても問題ない設計
+        runInitialSync();
+      });
+    } else {
+      runInitialSync();
+    }
   </script>
 </body>
 </html>
