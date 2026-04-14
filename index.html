@@ -421,6 +421,34 @@
       margin: 8px 0 0 20px;
     }
 
+    .risk-box {
+      margin: 16px 0;
+      padding: 16px;
+      border: 1px solid #e7d39a;
+      background: #fff9e6;
+      color: #7a5a00;
+      border-radius: 12px;
+    }
+
+    .risk-box h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .memo-box {
+      margin: 16px 0;
+      padding: 16px;
+      border: 1px solid #9ac3e5;
+      background: #eef6ff;
+      color: #1b4e8b;
+      border-radius: 12px;
+    }
+
+    .memo-box h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
     .footer-note {
       margin-top: 12px;
       color: var(--muted);
@@ -578,10 +606,10 @@
       <div class="header-form" style="grid-template-columns: 1fr 1.2fr 1fr 1fr;">
         <div class="field">
           <label>転換後に試用期間を設ける</label>
-          <select id="hasPostConversionProbation">
+          <select id="hasPostConversionProbation" name="probation_after_conversion">
             <option value="">（未選択）</option>
-            <option value="false">設けない</option>
-            <option value="true">設ける</option>
+            <option value="なし">設けない</option>
+            <option value="あり">設ける</option>
           </select>
         </div>
         <div class="field">
@@ -608,6 +636,16 @@
       <section class="fatal-box" id="fatalIssueBox">
         <h3>致命的不備フラグ</h3>
         <div id="fatalIssueText">現時点で致命的不備は検出されていません</div>
+      </section>
+
+      <section class="risk-box">
+        <h3>注意点（制度チェック）</h3>
+        <div id="riskText">現時点で注意点は検出されていません</div>
+      </section>
+
+      <section class="memo-box">
+        <h3>進行メモ</h3>
+        <div id="memoText">入力内容に応じて進行メモが表示されます</div>
       </section>
     </header>
 
@@ -742,7 +780,7 @@
           </div>
 
           <div id="risks" class="tab-pane">
-            <div class="warn-box" id="riskText">対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。</div>
+            <div class="warn-box" id="riskTextTab">対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。</div>
           </div>
 
           <div id="memo" class="tab-pane">
@@ -828,13 +866,32 @@
       const project = document.getElementById('projectName').value || '案件名未入力';
       const client = document.getElementById('clientName').value || '顧客名未入力';
       const deadline = updateApplicationDeadlineUi();
-      document.getElementById('memoList').innerHTML = `
-        <li>案件：${project}</li>
-        <li>顧客：${client}</li>
-        <li>支給申請期限：${deadline || '未算定'}</li>
-        <li>次アクション：未確認要件をヒアリングする</li>
-        <li>状態：初期整理中</li>
-      `;
+      const plannedConv = getInputValue("plannedConversionDate");
+      const sixPay = getInputValue("sixMonthPayDate");
+      const payDateCheck = (plannedConv && sixPay && isSixMonthPayDateTooEarly(plannedConv, sixPay)) ? "要確認" : "OK";
+      const progressMessages = [];
+      progressMessages.push(`案件：${project}`);
+      progressMessages.push(`顧客：${client}`);
+      progressMessages.push(`支給申請期限：${deadline || '未算定'}`);
+      progressMessages.push(`賃金支払日整合チェック：${payDateCheck}`);
+
+      const probationAfter = document.querySelector('[name="probation_after_conversion"]')?.value;
+      if (probationAfter === "あり") {
+        progressMessages.push("制度注意：転換後試用期間あり");
+      }
+
+      progressMessages.push("次アクション：未確認要件をヒアリングする");
+      progressMessages.push("状態：初期整理中");
+
+      const memoHtml = progressMessages.map(m => `<li>${m}</li>`).join("");
+
+      const memoList = document.getElementById('memoList');
+      if (memoList) memoList.innerHTML = memoHtml;
+
+      const memoText = document.getElementById('memoText');
+      if (memoText) {
+        memoText.innerHTML = `<ul style="margin:0; padding-left: 1.2em;">${memoHtml}</ul>`;
+      }
     }
 
     function loadDemo() {
@@ -968,6 +1025,8 @@ ${purposeDetailText}
       const v = getInputValue(id);
       if (v === "true") return true;
       if (v === "false") return false;
+      if (v === "あり") return true;
+      if (v === "なし") return false;
       return null;
     }
 
@@ -985,6 +1044,15 @@ ${purposeDetailText}
       const lastDay = new Date(targetFirst.getFullYear(), targetFirst.getMonth() + 1, 0).getDate();
       const day = Math.min(d, lastDay);
       return new Date(targetFirst.getFullYear(), targetFirst.getMonth(), day);
+    }
+
+    function isSixMonthPayDateTooEarly(plannedConversionDateStr, sixMonthPayDateStr) {
+      // 簡易チェック：転換予定日 + 6か月 より前に「6か月分賃金の支払日」がある場合は不整合とみなす
+      const conv = parseIsoDate(plannedConversionDateStr);
+      const pay = parseIsoDate(sixMonthPayDateStr);
+      if (!conv || !pay) return false;
+      const threshold = addMonthsClamped(conv, 6);
+      return pay < threshold;
     }
 
     function computeApplicationDeadline(payDateStr) {
@@ -1024,10 +1092,15 @@ ${purposeDetailText}
 
     function updateRisksAuto() {
       const e = collectEligibilityData();
-      const warnings = [];
+      const warningMessages = [];
 
-      if (e.hasPostConversionProbation === true) {
-        warnings.push("転換後に試用期間を設ける場合、その期間は正社員として扱われず、申請区分や賃金比較の起算点に影響する可能性があります。");
+      // 制度注意：転換後に試用期間を設ける
+      // name属性が不明な場合もあるため、name=probation_after_conversion を優先して取得
+      const probationAfter = document.querySelector('[name="probation_after_conversion"]')?.value;
+      if (probationAfter === "あり") {
+        warningMessages.push(
+          "転換後に試用期間が設定されています。助成金審査上、制度運用の説明が求められる可能性があります。"
+        );
       }
 
       // 正社員定義（(賞与 or 退職金) and 昇給）
@@ -1035,32 +1108,40 @@ ${purposeDetailText}
         const hasBonusOrRetirement = e.regularHasBonus === true || e.regularHasRetirement === true;
         const hasRaise = e.regularHasRaise === true;
         if (!(hasBonusOrRetirement && hasRaise)) {
-          warnings.push("正社員定義要件を再確認してください（賞与/退職金/昇給）。");
+          warningMessages.push("正社員定義要件を再確認してください（賞与/退職金/昇給）。");
         }
       }
 
       // 外国人区分（未選択は注意、対象外類型は注意）
       if (!e.foreignCategory) {
-        warnings.push("対象者の在留資格・外国人区分を確認してください。");
+        warningMessages.push("対象者の在留資格・外国人区分を確認してください。");
       } else if (["trainee", "epa_pre_pass", "ssw_1"].includes(e.foreignCategory)) {
-        warnings.push("外国人区分が対象外類型に該当する可能性があります。");
+        warningMessages.push("外国人区分が対象外類型に該当する可能性があります。");
+      }
+
+      // 転換予定日 × 6か月賃金支払日の整合（簡易）
+      const plannedConv = getInputValue("plannedConversionDate");
+      const sixPay = getInputValue("sixMonthPayDate");
+      if (plannedConv && sixPay && isSixMonthPayDateTooEarly(plannedConv, sixPay)) {
+        warningMessages.push("転換予定日と6か月分賃金支払日の整合を確認してください。");
       }
 
       if (!e.sixMonthPayDate) {
-        warnings.push("申請期限：未算定");
+        warningMessages.push("申請期限：未算定");
       } else {
-        warnings.push(`申請期限：${e.applicationDeadline}`);
+        warningMessages.push(`申請期限：${e.applicationDeadline}`);
       }
+
+      const text = warningMessages.length === 0 ? "現時点で注意点は検出されていません" : warningMessages.join("\n");
 
       const riskEl = document.getElementById("riskText");
-      if (!riskEl) return;
+      if (riskEl) riskEl.textContent = text;
 
-      if (warnings.length === 0) {
-        riskEl.textContent = "対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。";
-        return;
-      }
-
-      riskEl.textContent = warnings.join("\n");
+      // 既存の「注意点タブ」も維持
+      const riskTabEl = document.getElementById("riskTextTab");
+      if (riskTabEl) riskTabEl.textContent = warningMessages.length === 0
+        ? "対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。"
+        : warningMessages.join("\n");
     }
 
     function updateFatalIssues() {
@@ -1071,6 +1152,12 @@ ${purposeDetailText}
       const employmentBefore = getInputValue("employmentBefore");
       const employmentAfter = getInputValue("employmentAfter");
       const eligibility = collectEligibilityData();
+
+      // 転換予定日 × 6か月賃金支払日の整合（簡易）
+      // 片方未入力のときは致命的不備にしない（未入力ルールを優先）
+      if (plannedConversionDate && eligibility.sixMonthPayDate && isSixMonthPayDateTooEarly(plannedConversionDate, eligibility.sixMonthPayDate)) {
+        issues.push("6か月分賃金の支払日が早すぎます。転換後6か月分の賃金支払い実績を確認してください。");
+      }
 
       // 外国人区分（対象外）
       // ※未選択は致命的不備にしない（注意点タブで促す）
