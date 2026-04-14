@@ -537,6 +537,71 @@
           <button class="btn-sub" type="button" onclick="document.getElementById('makeReason')?.click()">理由文生成</button>
         </div>
       </div>
+
+      <div class="header-form" style="grid-template-columns: 1.2fr 1fr 1fr 1fr;">
+        <div class="field">
+          <label>就業規則 / 労働協約（労働者が確認できる客観的規定）</label>
+          <select id="hasObjectiveRules">
+            <option value="">（未選択）</option>
+            <option value="true">確認できる</option>
+            <option value="false">未確認 / 整備予定</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>正社員：賞与制度あり</label>
+          <select id="regularHasBonus">
+            <option value="">（未選択）</option>
+            <option value="true">あり</option>
+            <option value="false">なし</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>正社員：退職金制度あり</label>
+          <select id="regularHasRetirement">
+            <option value="">（未選択）</option>
+            <option value="true">あり</option>
+            <option value="false">なし</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>正社員：昇給制度あり</label>
+          <select id="regularHasRaise">
+            <option value="">（未選択）</option>
+            <option value="true">あり</option>
+            <option value="false">なし</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="header-form" style="grid-template-columns: 1fr 1.2fr 1fr 1fr;">
+        <div class="field">
+          <label>転換後に試用期間を設ける</label>
+          <select id="hasPostConversionProbation">
+            <option value="">（未選択）</option>
+            <option value="false">設けない</option>
+            <option value="true">設ける</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>対象者：外国人区分</label>
+          <select id="foreignCategory">
+            <option value="">（未選択）</option>
+            <option value="jp_or_pr">日本人・永住者等</option>
+            <option value="trainee">外国人技能実習生</option>
+            <option value="epa_pre_pass">EPA受入れ人材（合格前）</option>
+            <option value="ssw_1">特定技能第1号</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>6か月分賃金の支払日（実際）</label>
+          <input id="sixMonthPayDate" type="date" />
+        </div>
+        <div class="field">
+          <label>支給申請期限（自動計算）</label>
+          <input id="applicationDeadline" type="text" placeholder="（自動表示）" readonly />
+        </div>
+      </div>
     </header>
 
     <main class="main">
@@ -759,9 +824,11 @@
     function updateMemo() {
       const project = document.getElementById('projectName').value || '案件名未入力';
       const client = document.getElementById('clientName').value || '顧客名未入力';
+      const deadline = updateApplicationDeadlineUi();
       document.getElementById('memoList').innerHTML = `
         <li>案件：${project}</li>
         <li>顧客：${client}</li>
+        <li>支給申請期限：${deadline || '未算定'}</li>
         <li>次アクション：未確認要件をヒアリングする</li>
         <li>状態：初期整理中</li>
       `;
@@ -779,6 +846,15 @@
       document.getElementById('plannedBasePayIncreaseYen').value = 20000;
       document.getElementById('purpose').value = '人材確保・定着、戦力化';
       document.getElementById('purposeDetail').value = '採用難のため、経験者の定着を強化したい';
+      document.getElementById('hasObjectiveRules').value = 'false';
+      document.getElementById('regularHasBonus').value = 'false';
+      document.getElementById('regularHasRetirement').value = 'false';
+      document.getElementById('regularHasRaise').value = 'true';
+      document.getElementById('hasPostConversionProbation').value = 'true';
+      document.getElementById('foreignCategory').value = 'jp_or_pr';
+      const pay6m = new Date();
+      pay6m.setMonth(pay6m.getMonth() + 6);
+      document.getElementById('sixMonthPayDate').value = pay6m.toISOString().slice(0, 10);
       // 不足資料チェック（デモ）
       const setChecked = (id, v) => {
         const el = document.getElementById(id);
@@ -786,6 +862,7 @@
       };
       setChecked("doc_employment_contract", true);
       setChecked("doc_working_conditions_notice", true);
+      setChecked("doc_work_rules_or_agreement_objective", false);
       setChecked("doc_work_rules", false);
       setChecked("doc_wage_rules", false);
       setChecked("doc_conversion_rules", false);
@@ -799,7 +876,7 @@
       document.getElementById('docClient').innerHTML = '<li>雇用契約書</li><li>出勤簿</li><li>賃金台帳</li><li>会社概要</li>';
       document.getElementById('docOffice').innerHTML = '<li>就業規則の該当条文確認</li><li>支給申請様式のドラフト</li><li>期限管理表の作成</li>';
       document.getElementById('draftText').innerText = generateReasonText(collectReasonFormData());
-      document.getElementById('riskText').textContent = '転換日より前に就業規則改定が完了しているか、転換後賃金が要件を満たすか、対象者の雇用実績期間が基準を満たすかを確認してください。';
+      updateRisksAuto();
       updateMemo();
       addMessage('デモ案件を読み込みました。右側に整理済みの内容を表示しています。', 'ai');
     }
@@ -861,7 +938,8 @@ ${purposeDetailText}
     // --- 不足資料チェック（正社員化コース） ---
     const MISSING_DOCS = [
       { id: "doc_employment_contract", label: "雇用契約書" },
-      { id: "doc_work_rules", label: "就業規則" },
+      { id: "doc_work_rules_or_agreement_objective", label: "就業規則または労働協約（労働者が確認できる客観的規定）" },
+      { id: "doc_work_rules", label: "就業規則（写し）" },
       { id: "doc_wage_rules", label: "賃金規程" },
       { id: "doc_conversion_rules", label: "転換制度規程" },
       { id: "doc_attendance", label: "出勤簿" },
@@ -870,6 +948,10 @@ ${purposeDetailText}
     ];
 
     function getDocChecked(id) {
+      if (id === "doc_work_rules_or_agreement_objective") {
+        const v = getTriStateBool("hasObjectiveRules");
+        if (v !== null) return v;
+      }
       const el = document.getElementById(id);
       return el ? !!el.checked : false;
     }
@@ -879,6 +961,89 @@ ${purposeDetailText}
       return el ? String(el.value ?? "").trim() : "";
     }
 
+    function getTriStateBool(id) {
+      const v = getInputValue(id);
+      if (v === "true") return true;
+      if (v === "false") return false;
+      return null;
+    }
+
+    function parseIsoDate(dateStr) {
+      if (!dateStr) return null;
+      const d = new Date(dateStr);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function addMonthsClamped(dateObj, months) {
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth();
+      const d = dateObj.getDate();
+      const targetFirst = new Date(y, m + months, 1);
+      const lastDay = new Date(targetFirst.getFullYear(), targetFirst.getMonth() + 1, 0).getDate();
+      const day = Math.min(d, lastDay);
+      return new Date(targetFirst.getFullYear(), targetFirst.getMonth(), day);
+    }
+
+    function computeApplicationDeadline(payDateStr) {
+      // 「賃金支払日の翌日から起算して2か月以内」→ 期限は (翌日 + 2か月) の前日
+      const pay = parseIsoDate(payDateStr);
+      if (!pay) return "";
+      const start = new Date(pay.getFullYear(), pay.getMonth(), pay.getDate() + 1); // 翌日
+      const twoMonthsLaterSameDay = addMonthsClamped(start, 2);
+      const end = new Date(twoMonthsLaterSameDay.getFullYear(), twoMonthsLaterSameDay.getMonth(), twoMonthsLaterSameDay.getDate() - 1);
+      const y = end.getFullYear();
+      const mm = String(end.getMonth() + 1).padStart(2, "0");
+      const dd = String(end.getDate()).padStart(2, "0");
+      return `${y}-${mm}-${dd}`;
+    }
+
+    function collectEligibilityData() {
+      const sixMonthPayDate = getInputValue("sixMonthPayDate");
+      return {
+        plannedConversionDate: getInputValue("plannedConversionDate"),
+        hasObjectiveRules: getTriStateBool("hasObjectiveRules"),
+        regularHasBonus: getTriStateBool("regularHasBonus"),
+        regularHasRetirement: getTriStateBool("regularHasRetirement"),
+        regularHasRaise: getTriStateBool("regularHasRaise"),
+        hasPostConversionProbation: getTriStateBool("hasPostConversionProbation"),
+        foreignCategory: getInputValue("foreignCategory"),
+        sixMonthPayDate,
+        applicationDeadline: computeApplicationDeadline(sixMonthPayDate)
+      };
+    }
+
+    function updateApplicationDeadlineUi() {
+      const deadline = computeApplicationDeadline(getInputValue("sixMonthPayDate"));
+      const el = document.getElementById("applicationDeadline");
+      if (el) el.value = deadline;
+      return deadline;
+    }
+
+    function updateRisksAuto() {
+      const e = collectEligibilityData();
+      const warnings = [];
+
+      if (e.hasPostConversionProbation === true) {
+        warnings.push("転換後に試用期間を設ける場合、その期間は正社員として扱われず、申請区分や賃金比較の起算点に影響する可能性があります。");
+      }
+
+      if (!e.sixMonthPayDate) {
+        warnings.push("申請期限：未算定");
+      } else {
+        warnings.push(`申請期限：${e.applicationDeadline}`);
+      }
+
+      const riskEl = document.getElementById("riskText");
+      if (!riskEl) return;
+
+      if (warnings.length === 0) {
+        riskEl.textContent = "対象外経費、支給要件の時系列、就業規則の整備時期、添付不足の可能性をここに表示します。";
+        return;
+      }
+
+      riskEl.textContent = warnings.join("\n");
+    }
+
     function updateFatalIssues() {
       const issues = [];
 
@@ -886,15 +1051,16 @@ ${purposeDetailText}
       const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
       const employmentBefore = getInputValue("employmentBefore");
       const employmentAfter = getInputValue("employmentAfter");
+      const eligibility = collectEligibilityData();
 
       // ルール1: 転換制度規程が未チェック
       if (!getDocChecked("doc_conversion_rules")) {
         issues.push("転換制度規程が未確認です。制度の根拠が確認できないため、申請不可の可能性があります。");
       }
 
-      // ルール2: 転換予定日が入力されているのに就業規則が未チェック
-      if (plannedConversionDate && !getDocChecked("doc_work_rules")) {
-        issues.push("転換予定日は入力済みですが、就業規則が未確認です。転換制度の規定根拠不足となる可能性があります。");
+      // ルール2: 就業規則等（客観的規定）が未確認で、転換予定日が入力済み
+      if (plannedConversionDate && eligibility.hasObjectiveRules !== true) {
+        issues.push("就業規則等の客観的な規定が未確認です。助成金上の制度根拠不足となる可能性があります。");
       }
 
       // ルール3: 基本給増額予定額が入力されているのに賃金規程が未チェック
@@ -905,6 +1071,30 @@ ${purposeDetailText}
       // ルール4: 転換前/後雇用区分が未入力
       if (!employmentBefore || !employmentAfter) {
         issues.push("転換前後の雇用区分が未入力です。要件判定ができません。");
+      }
+
+      // ルール5: 正社員定義が未達（(賞与あり OR 退職金あり) AND 昇給あり）
+      const definitionInputsKnown =
+        eligibility.regularHasBonus !== null &&
+        eligibility.regularHasRetirement !== null &&
+        eligibility.regularHasRaise !== null;
+      if (definitionInputsKnown) {
+        const hasBonusOrRetirement =
+          eligibility.regularHasBonus === true || eligibility.regularHasRetirement === true;
+        const hasRaise = eligibility.regularHasRaise === true;
+        if (!(hasBonusOrRetirement && hasRaise)) {
+          issues.push("正社員定義（賞与または退職金＋昇給）を満たしていません。");
+        }
+      }
+
+      // ルール6: 外国人区分（対象外の可能性が高い）
+      if (["trainee", "epa_pre_pass", "ssw_1"].includes(eligibility.foreignCategory)) {
+        issues.push("対象外の可能性が高い外国人区分です。");
+      }
+
+      // ルール7: 6か月分賃金の支払日（実際）が未入力
+      if (!eligibility.sixMonthPayDate) {
+        issues.push("6か月分賃金の支払日（実際）が未入力です。支給申請期限を算定できません。");
       }
 
       const box = document.getElementById("fatalIssueBox");
@@ -923,12 +1113,16 @@ ${purposeDetailText}
       // 未チェック前提で優先度を算定（高いほど先頭）
       // 例：
       // - 転換制度規程が未チェックなら最優先
-      // - 転換予定日が入力されているのに就業規則が未チェックなら高
+      // - 転換予定日が入力されているのに「客観的規定」が未チェックなら高
       // - 基本給増額予定額が入力されているのに賃金規程が未チェックなら高
       const plannedConversionDate = getInputValue("plannedConversionDate");
       const plannedBasePayIncreaseYen = getInputValue("plannedBasePayIncreaseYen");
 
       if (docId === "doc_conversion_rules") return 300;
+
+      if (docId === "doc_work_rules_or_agreement_objective") {
+        return plannedConversionDate ? 240 : 140;
+      }
 
       if (docId === "doc_work_rules") {
         return plannedConversionDate ? 220 : 120;
@@ -950,6 +1144,9 @@ ${purposeDetailText}
       if (docId === "doc_conversion_rules") {
         reasons.push("転換制度規程が未確認だと、支給要件（制度の客観性）の説明が組み立てにくいです。");
       }
+      if (docId === "doc_work_rules_or_agreement_objective" && plannedConversionDate) {
+        reasons.push("転換予定日が入力されています（転換の実施が具体化）→ 助成金上『労働者が確認できる客観的な規定』の整備確認が最優先です（10人未満でも必要）。");
+      }
       if (docId === "doc_work_rules" && plannedConversionDate) {
         reasons.push("転換予定日が入力されています（転換の実施が具体化）→ 就業規則の整備・周知・整合確認が優先です。");
       }
@@ -962,6 +1159,11 @@ ${purposeDetailText}
     function renderMissingDocsChecklist() {
       const box = document.getElementById("missingDocsChecklist");
       if (!box) return;
+
+      // 期限（自動計算）と注意点も入力連動で更新
+      updateApplicationDeadlineUi();
+      updateRisksAuto();
+      updateMemo();
 
       // チェック/入力に連動した致命的不備表示も更新
       updateFatalIssues();
@@ -1027,7 +1229,19 @@ ${purposeDetailText}
     renderMissingDocsChecklist();
 
     // 入力内容との連動（例：転換予定日・基本給増額予定額の入力で優先度が変わる）
-    ["plannedConversionDate", "plannedBasePayIncreaseYen", "employmentBefore", "employmentAfter"].forEach((id) => {
+    [
+      "plannedConversionDate",
+      "plannedBasePayIncreaseYen",
+      "employmentBefore",
+      "employmentAfter",
+      "hasObjectiveRules",
+      "regularHasBonus",
+      "regularHasRetirement",
+      "regularHasRaise",
+      "hasPostConversionProbation",
+      "foreignCategory",
+      "sixMonthPayDate"
+    ].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("input", () => renderMissingDocsChecklist());
     });
@@ -1045,7 +1259,15 @@ ${purposeDetailText}
         plannedBasePayIncreaseYen: document.getElementById('plannedBasePayIncreaseYen')?.value,
         purpose: document.getElementById('purpose')?.value,
         purposeDetail: document.getElementById('purposeDetail')?.value,
+        hasObjectiveRules: document.getElementById('hasObjectiveRules')?.value,
+        regularHasBonus: document.getElementById('regularHasBonus')?.value,
+        regularHasRetirement: document.getElementById('regularHasRetirement')?.value,
+        regularHasRaise: document.getElementById('regularHasRaise')?.value,
+        hasPostConversionProbation: document.getElementById('hasPostConversionProbation')?.value,
+        foreignCategory: document.getElementById('foreignCategory')?.value,
+        sixMonthPayDate: document.getElementById('sixMonthPayDate')?.value,
         doc_employment_contract: getDocChecked("doc_employment_contract"),
+        doc_work_rules_or_agreement_objective: getDocChecked("doc_work_rules_or_agreement_objective"),
         doc_work_rules: getDocChecked("doc_work_rules"),
         doc_wage_rules: getDocChecked("doc_wage_rules"),
         doc_conversion_rules: getDocChecked("doc_conversion_rules"),
@@ -1074,12 +1296,20 @@ ${purposeDetailText}
         if (data.plannedBasePayIncreaseYen) document.getElementById('plannedBasePayIncreaseYen').value = data.plannedBasePayIncreaseYen;
         if (data.purpose) document.getElementById('purpose').value = data.purpose;
         if (data.purposeDetail) document.getElementById('purposeDetail').value = data.purposeDetail;
+        if (data.hasObjectiveRules) document.getElementById('hasObjectiveRules').value = data.hasObjectiveRules;
+        if (data.regularHasBonus) document.getElementById('regularHasBonus').value = data.regularHasBonus;
+        if (data.regularHasRetirement) document.getElementById('regularHasRetirement').value = data.regularHasRetirement;
+        if (data.regularHasRaise) document.getElementById('regularHasRaise').value = data.regularHasRaise;
+        if (data.hasPostConversionProbation) document.getElementById('hasPostConversionProbation').value = data.hasPostConversionProbation;
+        if (data.foreignCategory) document.getElementById('foreignCategory').value = data.foreignCategory;
+        if (data.sixMonthPayDate) document.getElementById('sixMonthPayDate').value = data.sixMonthPayDate;
         const restoreChecked = (id) => {
           const el = document.getElementById(id);
           if (!el) return;
           if (data[id] === true || data[id] === false) el.checked = data[id];
         };
         restoreChecked("doc_employment_contract");
+        restoreChecked("doc_work_rules_or_agreement_objective");
         restoreChecked("doc_work_rules");
         restoreChecked("doc_wage_rules");
         restoreChecked("doc_conversion_rules");
